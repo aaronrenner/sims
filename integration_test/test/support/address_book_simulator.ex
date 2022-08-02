@@ -4,7 +4,14 @@ defmodule MyApp.AddressBookSimulator do
   """
   @opaque t :: %{bypass: Bypass.t(), state_server: pid}
 
-  @type route_id :: :all
+  @type route_id ::
+          :all
+          | :list_contacts
+          | :create_contact
+          | :show_contact
+          | :update_contact
+          | :delete_contact
+          | :status
 
   @type account_id :: String.t()
   @type contact_id :: String.t()
