@@ -1,6 +1,10 @@
 # Sims
 
-Code generator for simulating external services.
+WIP - This repo contains examples of test simulators that can be used to test
+external services.
+
+My goal is for this to eventually be a code generator that lays down the
+boilerplate for simulating external services.
 
 ## Installation
 
