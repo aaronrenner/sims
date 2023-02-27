@@ -120,7 +120,7 @@ jobs:
         elixir-version: '1.13.3'
         otp-version: '24.1'
     - name: Restore dependencies cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       id: integration-test-deps-cache
       with:
         path: integration_test/deps
@@ -128,7 +128,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-mix-
     - name: Restore compiled dependencies cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       id: compiled-deps-cache
       with:
         path: integration_test/_build/${{ env.MIX_ENV || 'dev'}}/lib
