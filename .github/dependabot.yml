@@ -8,6 +8,13 @@ updates:
     reviewers:
       - "aaronrenner"
 
+  - package-ecosystem: "mix"
+    directory: "/integration_test"
+    schedule:
+      interval: "daily"
+    reviewers:
+      - "aaronrenner"
+
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
