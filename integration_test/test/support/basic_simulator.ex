@@ -7,7 +7,6 @@ defmodule MyApp.BasicSimulator do
   alias MyApp.BasicSimulator.StateServer
 
   @type t :: pid
-  @type start_opt :: {:notify, boolean | pid}
   @type route_id :: atom
 
   @doc false
@@ -22,7 +21,7 @@ defmodule MyApp.BasicSimulator do
   @doc """
   Start up a instance, linked to the current test process
   """
-  @spec start_link([start_opt]) :: Supervisor.on_start()
+  @spec start_link(keyword) :: Supervisor.on_start()
   def start_link(opts) do
     with {:ok, sup} <- Supervisor.start_link([], strategy: :rest_for_one) do
       {:ok, _} = Application.ensure_all_started(:bandit)

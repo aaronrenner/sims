@@ -4,7 +4,7 @@ defmodule Sims.Integration.BasicSimulatorTest do
   alias MyApp.BasicSimulator
 
   test "simulator starts successfully" do
-    sim = start_supervised!({MyApp.BasicSimulator, notify: self()})
+    sim = start_supervised!(MyApp.BasicSimulator)
 
     req = build_req(sim)
 
@@ -15,7 +15,7 @@ defmodule Sims.Integration.BasicSimulatorTest do
   end
 
   test "allows for closing and reopening a connection" do
-    sim = start_supervised!({MyApp.BasicSimulator, notify: self()})
+    sim = start_supervised!(MyApp.BasicSimulator)
 
     req = build_req(sim)
 
