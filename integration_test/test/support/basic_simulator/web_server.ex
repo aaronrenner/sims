@@ -27,7 +27,6 @@ defmodule MyApp.BasicSimulator.WebServer do
              startup_log: false,
              thousand_island_options: [shutdown_timeout: :brutal_kill]
            ) do
-
       {:ok, {_addr, port}} = ThousandIsland.listener_info(bandit)
 
       # This allows us to keep the port we start on around after it is stopped or crashes

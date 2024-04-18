@@ -22,7 +22,7 @@ defmodule MyApp.BasicSimulator do
   Start up a instance, linked to the current test process
   """
   @spec start_link(keyword) :: Supervisor.on_start()
-  def start_link(opts) do
+  def start_link(_opts) do
     with {:ok, sup} <- Supervisor.start_link([], strategy: :rest_for_one) do
       {:ok, _} = Application.ensure_all_started(:bandit)
 
