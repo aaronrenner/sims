@@ -3,8 +3,8 @@ defmodule MyApp.BasicSimulator do
   Simulator for a basic HTTP Server
   """
   alias MyApp.BasicSimulator.PortCache
-  alias MyApp.BasicSimulator.WebServer
   alias MyApp.BasicSimulator.StateServer
+  alias MyApp.BasicSimulator.WebServer
 
   @type t :: pid
   @type route_id :: atom
