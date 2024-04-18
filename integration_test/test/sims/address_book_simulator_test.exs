@@ -150,10 +150,10 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
   end
 
   defp build_req(sim) do
-    Req.new(base_url: AddressBookSimulator.base_url(sim), retry: :never)
+    Req.new(base_url: AddressBookSimulator.base_url(sim), retry: false)
   end
 
   defp attach_account_auth(req, account) do
-    Req.Request.merge_options(req, auth: {account.id, account.token})
+    Req.Request.merge_options(req, auth: {:basic, "#{account.id}:#{account.token}"})
   end
 end

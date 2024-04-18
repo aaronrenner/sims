@@ -30,6 +30,6 @@ defmodule Sims.Integration.BasicSimulatorTest do
   end
 
   defp build_req(sim) do
-    Req.new(base_url: BasicSimulator.base_url(sim), retry: :never)
+    Req.new(base_url: BasicSimulator.base_url(sim), retry: false)
   end
 end
