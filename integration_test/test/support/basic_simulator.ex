@@ -2,40 +2,68 @@ defmodule MyApp.BasicSimulator do
   @moduledoc """
   Simulator for a basic HTTP Server
   """
-  @opaque t :: %{bypass: Bypass.t(), state_server: pid}
+  alias MyApp.BasicSimulator.PortCache
+  alias MyApp.BasicSimulator.StateServer
+  alias MyApp.BasicSimulator.WebServer
 
-  alias MyApp.BasicSimulator.{Router, StateServer}
+  @type t :: pid
+  @type route_id :: atom
+
+  @doc false
+  def child_spec(init_arg) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [init_arg]},
+      type: :supervisor
+    }
+  end
 
   @doc """
   Start up a instance, linked to the current test process
   """
-  @spec open() :: t
-  def open do
-    {:ok, state_server} = StateServer.start_link()
+  @spec start_link(keyword) :: Supervisor.on_start()
+  def start_link(_opts) do
+    with {:ok, sup} <- Supervisor.start_link([], strategy: :rest_for_one) do
+      {:ok, _} = Application.ensure_all_started(:bandit)
 
-    simulator = %{bypass: Bypass.open(), state_server: state_server}
+      {:ok, port_cache} = Supervisor.start_child(sup, PortCache)
+      {:ok, state_server} = Supervisor.start_child(sup, StateServer)
 
-    Router.stub_responses(simulator)
+      {:ok, _web_server} =
+        Supervisor.start_child(
+          sup,
+          {WebServer, port_cache: port_cache, state_server: state_server}
+        )
 
-    simulator
+      {:ok, sup}
+    end
   end
 
   @doc """
   Close the simulator's TCP socket.
   """
   @spec down(t) :: :ok
-  def down(%{bypass: bypass}) do
-    Bypass.down(bypass)
-
-    :ok
+  def down(sim) do
+    sim
+    |> lookup_child_process!(WebServer)
+    |> ThousandIsland.stop()
   end
 
   @doc """
   Reopen the simulator's TCP socket.
   """
   @spec up(t) :: :ok
-  def up(%{bypass: bypass}) do
-    Bypass.up(bypass)
+  def up(sim) do
+    port_cache = lookup_child_process!(sim, PortCache)
+    state_server = lookup_child_process!(sim, StateServer)
+
+    case Supervisor.start_child(
+           sim,
+           {WebServer, port_cache: port_cache, state_server: state_server}
+         ) do
+      {:ok, _web_server} -> :ok
+      {:error, :already_present} -> Supervisor.restart_child(sim, WebServer)
+    end
 
     :ok
   end
@@ -45,6 +73,20 @@ defmodule MyApp.BasicSimulator do
   """
   @spec base_url(t) :: String.t()
   def base_url(sim) do
-    "http://localhost:#{sim.bypass.port}"
+    port =
+      sim
+      |> lookup_child_process!(PortCache)
+      |> PortCache.get()
+
+    "http://localhost:#{port}"
+  end
+
+  defp lookup_child_process!(sup, id) do
+    {^id, pid, _, _} =
+      sup
+      |> Supervisor.which_children()
+      |> List.keyfind!(id, 0)
+
+    pid
   end
 end
