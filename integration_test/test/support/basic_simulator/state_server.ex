@@ -3,7 +3,7 @@ defmodule MyApp.BasicSimulator.StateServer do
 
   use Agent
 
-  alias MyApp.BasicSimulator.State
+  alias MyApp.BasicSimulator.StateServer.State
 
   def start_link(_opts \\ []) do
     Agent.start_link(fn -> State.new() end)
