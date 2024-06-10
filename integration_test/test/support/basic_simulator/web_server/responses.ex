@@ -1,4 +1,4 @@
-defmodule MyApp.BasicSimulator.Responses do
+defmodule MyApp.BasicSimulator.WebServer.Responses do
   @moduledoc false
 
   import Plug.Conn
