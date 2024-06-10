@@ -3,7 +3,7 @@ defmodule MyApp.BasicSimulator.WebServer.Router do
 
   use Plug.Router
 
-  alias MyApp.BasicSimulator.Responses
+  alias MyApp.BasicSimulator.WebServer.Responses
 
   plug :match
   plug :fetch_query_params
