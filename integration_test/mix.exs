@@ -29,7 +29,7 @@ defmodule Sims.Integration.MixProject do
       {:bandit, "~> 1.0"},
       {:bypass, "~> 2.1"},
       {:plug, "~> 1.13"},
-      {:req, "~> 0.4.11", only: :test},
+      {:req, "~> 0.5.1", only: :test},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
   end
