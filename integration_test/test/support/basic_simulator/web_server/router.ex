@@ -15,6 +15,14 @@ defmodule MyApp.BasicSimulator.WebServer.Router do
 
   plug :dispatch
 
+  def call(conn, opts) do
+    {state_server, opts} = Keyword.pop!(opts, :state_server)
+
+    conn
+    |> assign(:state_server, state_server)
+    |> super(opts)
+  end
+
   get "/hello" do
     Responses.hello_success(conn)
   end
