@@ -15,8 +15,8 @@ jobs:
     - name: Set up Elixir
       uses: erlef/setup-beam@v1.18
       with:
-        elixir-version: '1.14.x'
-        otp-version: '24.x'
+        elixir-version: '1.17'
+        otp-version: '27'
     - name: Restore dependencies cache
       uses: actions/cache@v4
       id: deps-cache
@@ -59,8 +59,8 @@ jobs:
       id: beam
       uses: erlef/setup-beam@v1.18
       with:
-        elixir-version: '1.14.x'
-        otp-version: '24.x'
+        elixir-version: '1.17'
+        otp-version: '27'
     - name: Restore dependencies cache
       uses: actions/cache@v4
       id: deps-cache
@@ -117,8 +117,8 @@ jobs:
     - name: Set up Elixir
       uses: erlef/setup-beam@v1.18
       with:
-        elixir-version: '1.14.x'
-        otp-version: '24.x'
+        elixir-version: '1.17'
+        otp-version: '27'
     - name: Restore dependencies cache
       uses: actions/cache@v4
       id: integration-test-deps-cache
