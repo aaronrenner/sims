@@ -21,7 +21,7 @@ defmodule Sims.Integration.BasicSimulatorTest do
 
     BasicSimulator.down(sim)
 
-    assert {:error, %Mint.TransportError{reason: :econnrefused}} =
+    assert {:error, %Req.TransportError{reason: :econnrefused}} =
              Req.request(req, url: "/hello", method: :get)
 
     BasicSimulator.up(sim)

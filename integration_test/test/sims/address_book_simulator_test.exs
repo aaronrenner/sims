@@ -19,7 +19,7 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
 
     AddressBookSimulator.down(sim)
 
-    assert {:error, %Mint.TransportError{reason: :econnrefused}} =
+    assert {:error, %Req.TransportError{reason: :econnrefused}} =
              Req.request(req, url: "/status")
 
     AddressBookSimulator.up(sim)
