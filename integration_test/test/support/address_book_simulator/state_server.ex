@@ -3,7 +3,7 @@ defmodule MyApp.AddressBookSimulator.StateServer do
 
   use Agent
 
-  alias MyApp.AddressBookSimulator.State
+  alias MyApp.AddressBookSimulator.StateServer.State
 
   def start_link(_opts \\ []) do
     Agent.start_link(fn -> State.new() end)

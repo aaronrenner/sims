@@ -1,4 +1,4 @@
-defmodule MyApp.AddressBookSimulator.State do
+defmodule MyApp.AddressBookSimulator.StateServer.State do
   @moduledoc false
 
   @type t :: map()
