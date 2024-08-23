@@ -1,21 +1,10 @@
-defmodule MyApp.AddressBookSimulator.Router do
+defmodule MyApp.AddressBookSimulator.WebServer.Router do
   @moduledoc false
 
   use Plug.Router
 
-  alias MyApp.AddressBookSimulator.Responses
   alias MyApp.AddressBookSimulator.StateServer
-
-  # This is needed until https://github.com/PSPDFKit-labs/bypass/pull/125 is merged
-  @dialyzer {:nowarn_function, stub_responses: 1}
-
-  def stub_responses(simulator) do
-    Bypass.stub(simulator.bypass, :any, :any, fn conn ->
-      conn
-      |> Plug.Conn.assign(:state_server, simulator.state_server)
-      |> call(init([]))
-    end)
-  end
+  alias MyApp.AddressBookSimulator.WebServer.Responses
 
   plug :match
   plug :fetch_query_params
@@ -30,6 +19,14 @@ defmodule MyApp.AddressBookSimulator.Router do
   plug :require_authentication
 
   plug :dispatch
+
+  def call(conn, opts) do
+    {state_server, opts} = Keyword.pop!(opts, :state_server)
+
+    conn
+    |> assign(:state_server, state_server)
+    |> super(opts)
+  end
 
   get "/contacts", assigns: %{endpoint_id: :list_contacts} do
     contacts = StateServer.list_contacts(conn.assigns.state_server, conn.assigns.account_id)

@@ -1,4 +1,4 @@
-defmodule MyApp.AddressBookSimulator.Responses do
+defmodule MyApp.AddressBookSimulator.WebServer.Responses do
   @moduledoc false
 
   def render_contacts(contacts) when is_list(contacts) do

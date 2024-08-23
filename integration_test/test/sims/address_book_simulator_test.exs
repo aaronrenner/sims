@@ -4,7 +4,7 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
   alias MyApp.AddressBookSimulator
 
   test "simulator starts successfully" do
-    sim = AddressBookSimulator.open()
+    sim = start_supervised!(AddressBookSimulator)
     req = build_req(sim)
 
     response = Req.get!(req, url: "/status")
@@ -14,7 +14,7 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
   end
 
   test "allows for closing and reopening a connection" do
-    sim = AddressBookSimulator.open()
+    sim = start_supervised!(AddressBookSimulator)
     req = build_req(sim)
 
     AddressBookSimulator.down(sim)
@@ -28,7 +28,7 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
   end
 
   test "requires an API token" do
-    sim = AddressBookSimulator.open()
+    sim = start_supervised!(AddressBookSimulator)
     {:ok, account} = AddressBookSimulator.create_account(sim)
     req = build_req(sim)
 
@@ -42,7 +42,7 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
 
   describe "simulator business logic" do
     test "contact crud" do
-      sim = AddressBookSimulator.open()
+      sim = start_supervised!(AddressBookSimulator)
       {:ok, account} = AddressBookSimulator.create_account(sim)
       req = sim |> build_req() |> attach_account_auth(account)
 
@@ -81,7 +81,7 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
     end
 
     test "contacts are returned in the order they are inserted" do
-      sim = AddressBookSimulator.open()
+      sim = start_supervised!(AddressBookSimulator)
       {:ok, account} = AddressBookSimulator.create_account(sim)
       req = sim |> build_req() |> attach_account_auth(account)
 
@@ -96,7 +96,7 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
     end
 
     test "contacts are separated by account" do
-      sim = AddressBookSimulator.open()
+      sim = start_supervised!(AddressBookSimulator)
       {:ok, account_1} = AddressBookSimulator.create_account(sim)
       AddressBookSimulator.create_contact(sim, account_1.id, first_name: "Contact")
       account_1_req = sim |> build_req() |> attach_account_auth(account_1)
@@ -113,7 +113,7 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
 
   describe "triggering errors" do
     test "globally" do
-      sim = AddressBookSimulator.open()
+      sim = start_supervised!(AddressBookSimulator)
       req = build_req(sim)
 
       AddressBookSimulator.trigger_internal_server_errors(sim, :all)
@@ -129,7 +129,7 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
     end
 
     test "per endpoint" do
-      sim = AddressBookSimulator.open()
+      sim = start_supervised!(AddressBookSimulator)
       {:ok, account} = AddressBookSimulator.create_account(sim)
       req = sim |> build_req() |> attach_account_auth(account)
 
