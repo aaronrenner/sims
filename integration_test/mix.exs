@@ -27,7 +27,6 @@ defmodule Sims.Integration.MixProject do
   defp deps do
     [
       {:bandit, "~> 1.0"},
-      {:bypass, "~> 2.1"},
       {:plug, "~> 1.13"},
       {:req, "~> 0.5.6", only: :test},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
