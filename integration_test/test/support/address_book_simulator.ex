@@ -19,7 +19,8 @@ defmodule MyApp.AddressBookSimulator do
   @type account :: %{id: account_id, api_key: api_key}
   @type contact :: %{id: contact_id, first_name: String.t(), last_name: String.t()}
 
-  alias MyApp.AddressBookSimulator.{Router, StateServer}
+  alias MyApp.AddressBookSimulator.Router
+  alias MyApp.AddressBookSimulator.StateServer
 
   @doc """
   Start up a instance, linked to the current test process

@@ -3,7 +3,8 @@ defmodule MyApp.AddressBookSimulator.Router do
 
   use Plug.Router
 
-  alias MyApp.AddressBookSimulator.{Responses, StateServer}
+  alias MyApp.AddressBookSimulator.Responses
+  alias MyApp.AddressBookSimulator.StateServer
 
   # This is needed until https://github.com/PSPDFKit-labs/bypass/pull/125 is merged
   @dialyzer {:nowarn_function, stub_responses: 1}
