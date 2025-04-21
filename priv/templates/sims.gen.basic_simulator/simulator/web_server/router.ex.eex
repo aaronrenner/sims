@@ -1,9 +1,9 @@
-defmodule MyApp.BasicSimulator.WebServer.Router do
+defmodule <%= @module %> do
   @moduledoc false
 
   use Plug.Router
 
-  alias MyApp.BasicSimulator.WebServer.Responses
+  alias <%= @sim_namespace %>.WebServer.Responses
 
   plug :match
   plug :fetch_query_params

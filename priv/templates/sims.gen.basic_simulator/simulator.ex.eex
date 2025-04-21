@@ -1,10 +1,11 @@
-defmodule MyApp.BasicSimulator do
+defmodule <%= @module %> do
   @moduledoc """
-  Simulator for a basic HTTP Server
+  A basic HTTP simulator
   """
-  alias MyApp.BasicSimulator.PortCache
-  alias MyApp.BasicSimulator.StateServer
-  alias MyApp.BasicSimulator.WebServer
+
+  alias <%= @module %>.PortCache
+  alias <%= @module %>.StateServer
+  alias <%= @module %>.WebServer
 
   @type t :: pid
   @type route_id :: atom

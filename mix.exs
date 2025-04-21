@@ -22,6 +22,7 @@ defmodule Sims.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:igniter, "~> 0.5"},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
@@ -31,7 +32,8 @@ defmodule Sims.MixProject do
   defp dialyzer(%{"CI" => "true"}) do
     [
       plt_core_path: ".dialyzer/core",
-      plt_local_path: ".dialyzer/local"
+      plt_local_path: ".dialyzer/local",
+      plt_add_apps: [:mix]
     ]
   end
 

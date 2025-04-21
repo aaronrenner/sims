@@ -1,8 +1,8 @@
-defmodule MyApp.BasicSimulator.WebServer do
+defmodule <%= @module %> do
   @moduledoc false
 
-  alias MyApp.BasicSimulator.PortCache
-  alias MyApp.BasicSimulator.WebServer.Router
+  alias <%= @sim_namespace %>.PortCache
+  alias <%= @module %>.Router
 
   def child_spec(opts) do
     %{
