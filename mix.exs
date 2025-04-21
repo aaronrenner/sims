@@ -32,7 +32,8 @@ defmodule Sims.MixProject do
   defp dialyzer(%{"CI" => "true"}) do
     [
       plt_core_path: ".dialyzer/core",
-      plt_local_path: ".dialyzer/local"
+      plt_local_path: ".dialyzer/local",
+      plt_add_apps: [:mix]
     ]
   end
 
