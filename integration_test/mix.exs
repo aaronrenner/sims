@@ -26,9 +26,10 @@ defmodule Sims.Integration.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:sims, path: "../"},
       {:bandit, "~> 1.0"},
       {:plug, "~> 1.13"},
-      {:req, "~> 0.5.6", only: :test},
+      {:req, "~> 0.5.6"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
   end
