@@ -74,11 +74,16 @@ defmodule Mix.Tasks.Sims.Gen.BasicSimulator do
     |> Igniter.Project.Formatter.import_dep(:plug)
     |> then(fn igniter ->
       if igniter.args.options[:include_tests] do
+        sim_namespace = igniter.assigns.sim_namespace
+        module = :"#{sim_base_module_name}Test"
+
         igniter
-        |> copy_simulator_template(
-          "simulator_test.exs.eex",
-          :"#{sim_base_module_name}Test",
-          :test
+        |> Igniter.copy_template(
+          Path.join(base_template_path(), "simulator_test.exs.eex"),
+          Igniter.Project.Module.proper_location(igniter, module, :test),
+          module: inspect(module),
+          sim_namespace: inspect(sim_namespace),
+          sim_namespace_basename: sim_namespace |> Module.split() |> List.last()
         )
         |> Igniter.Project.Deps.add_dep({:req, "~> 0.5"}, append?: true)
       else
@@ -90,8 +95,7 @@ defmodule Mix.Tasks.Sims.Gen.BasicSimulator do
   defp copy_simulator_template(
          igniter,
          template_path,
-         child_module_name \\ nil,
-         location_type \\ :test_support
+         child_module_name \\ nil
        ) do
     sim_namespace = igniter.assigns.sim_namespace
     module = Module.concat(sim_namespace, child_module_name)
@@ -99,10 +103,9 @@ defmodule Mix.Tasks.Sims.Gen.BasicSimulator do
     Igniter.copy_template(
       igniter,
       Path.join(base_template_path(), template_path),
-      Igniter.Project.Module.proper_location(igniter, module, location_type),
+      Igniter.Project.Module.proper_location(igniter, module, :test_support),
       module: inspect(module),
-      sim_namespace: inspect(sim_namespace),
-      sim_namespace_basename: sim_namespace |> Module.split() |> List.last()
+      sim_namespace: inspect(sim_namespace)
     )
   end
 

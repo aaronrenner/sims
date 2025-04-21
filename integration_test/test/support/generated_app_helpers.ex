@@ -45,4 +45,12 @@ defmodule Sims.Integration.GeneratedAppHelpers do
       when is_list(args) and is_binary(app_path) and is_list(opts) do
     System.cmd("mix", args, [stderr_to_stdout: true, cd: Path.expand(app_path)] ++ opts)
   end
+
+  def list_project_files(app_path) do
+    app_path
+    |> Path.join("**/*")
+    |> Path.wildcard()
+    |> Enum.map(&String.trim_leading(&1, app_path <> "/"))
+    |> Enum.reject(&(String.starts_with?(&1, "_build") || String.starts_with?(&1, "deps")))
+  end
 end
