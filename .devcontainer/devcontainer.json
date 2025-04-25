@@ -1,0 +1,4 @@
+{
+  "image": "hexpm/elixir:1.18.3-erlang-27.3-ubuntu-noble-20250127",
+  "postCreateCommand": "apt-get update && apt-get install build-essential git inotify-tools"
+}
