@@ -1,4 +1,4 @@
-defmodule Sims.Integration.BasicSimulatorTest do
+defmodule Sims.Integration.BasicHttpTest do
   use ExUnit.Case, async: true
 
   import Sims.Integration.GeneratedAppHelpers
@@ -7,7 +7,7 @@ defmodule Sims.Integration.BasicSimulatorTest do
   test "works with a generated project", %{tmp_dir: tmp_dir} do
     app_path = generate_project(tmp_dir)
 
-    mix_run!(~w(sims.gen.basic_simulator MySimulator --include-tests --yes), app_path)
+    mix_run!(~w(sims.gen.basic_http MySimulator --include-tests --yes), app_path)
     mix_run!(~w(test), app_path)
 
     paths = list_project_files(app_path)
