@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.Sims.Gen.HttpCrud do
   use Igniter.Mix.Task
 
-  @example "mix sims.gen.http_crud MySimulator"
+  @example "mix sims.gen.http_crud AddressBookSimulator contact contacts"
 
   @shortdoc "Generates a HTTP simulator with CRUD functionality"
   @moduledoc """
@@ -35,7 +35,7 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
       # An example invocation
       example: @example,
       # a list of positional arguments, i.e `[:file]`
-      positional: [:name],
+      positional: [:name, :model_name, :plural_model_name],
       # Other tasks your task composes using `Igniter.compose_task`, passing in the CLI argv
       # This ensures your option schema includes options from nested tasks
       composes: [],
@@ -62,6 +62,8 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
     igniter
     |> Igniter.Project.Test.ensure_test_support()
     |> Igniter.assign(:sim_namespace, sim_base_module_name)
+    |> Igniter.assign(:model_name, igniter.args.positional.model_name)
+    |> Igniter.assign(:plural_model_name, igniter.args.positional.plural_model_name)
     |> copy_simulator_template("simulator.ex.eex")
     |> copy_simulator_template("simulator/port_cache.ex.eex", PortCache)
     |> copy_simulator_template("simulator/state_server.ex.eex", StateServer)
@@ -83,13 +85,16 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
           Igniter.Project.Module.proper_location(igniter, module, :test),
           module: inspect(module),
           sim_namespace: inspect(sim_namespace),
-          sim_namespace_basename: sim_namespace |> Module.split() |> List.last()
+          sim_namespace_basename: sim_namespace |> Module.split() |> List.last(),
+          model_name: igniter.assigns.model_name,
+          plural_model_name: igniter.assigns.plural_model_name
         )
         |> Igniter.Project.Deps.add_dep({:req, "~> 0.5"}, append?: true)
       else
         igniter
       end
     end)
+    |> IO.inspect()
   end
 
   defp copy_simulator_template(
@@ -105,6 +110,8 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
       Path.join(base_template_path(), template_path),
       Igniter.Project.Module.proper_location(igniter, module, :test_support),
       module: inspect(module),
+      model_name: igniter.assigns.model_name,
+      plural_model_name: igniter.assigns.plural_model_name,
       sim_namespace: inspect(sim_namespace)
     )
   end

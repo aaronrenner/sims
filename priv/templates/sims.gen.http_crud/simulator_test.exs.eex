@@ -32,82 +32,82 @@ defmodule <%= @module %> do
     {:ok, account} = <%= @sim_namespace_basename %>.create_account(sim)
     req = build_req(sim)
 
-    assert Req.get!(req, url: "/contacts").status == 401
+    assert Req.get!(req, url: "/<%= @plural_model_name %>").status == 401
 
-    resp = req |> attach_account_auth(account) |> Req.get!(url: "/contacts")
+    resp = req |> attach_account_auth(account) |> Req.get!(url: "/<%= @plural_model_name %>")
 
     assert resp.status == 200
-    assert %{"contacts" => []} = resp.body
+    assert %{"<%= @plural_model_name %>" => []} = resp.body
   end
 
   describe "simulator business logic" do
-    test "contact crud" do
+    test "<%= @model_name %> crud" do
       sim = start_supervised!(<%= @sim_namespace_basename %>)
       {:ok, account} = <%= @sim_namespace_basename %>.create_account(sim)
       req = sim |> build_req() |> attach_account_auth(account)
 
       assert resp =
                Req.post!(req,
-                 url: "/contacts",
+                 url: "/<%= @plural_model_name %>",
                  json: %{"first_name" => "Joe", "last_name" => "Smith"}
                )
 
       assert resp.status == 201
       assert %{"id" => id, "first_name" => "Joe", "last_name" => "Smith"} = resp.body
 
-      assert %{status: 200, body: body} = Req.get!(req, url: "/contacts/#{id}")
+      assert %{status: 200, body: body} = Req.get!(req, url: "/<%= @plural_model_name %>/#{id}")
       assert %{"id" => ^id, "first_name" => "Joe", "last_name" => "Smith"} = body
 
-      assert %{status: 200, body: body} = Req.get!(req, url: "/contacts")
+      assert %{status: 200, body: body} = Req.get!(req, url: "/<%= @plural_model_name %>")
 
-      assert %{"contacts" => [%{"id" => ^id, "first_name" => "Joe", "last_name" => "Smith"}]} =
+      assert %{"<%= @plural_model_name %>" => [%{"id" => ^id, "first_name" => "Joe", "last_name" => "Smith"}]} =
                body
 
       assert %{status: 200, body: body} =
-               Req.patch!(req, url: "/contacts/#{id}", json: %{"first_name" => "Jim"})
+               Req.patch!(req, url: "/<%= @plural_model_name %>/#{id}", json: %{"first_name" => "Jim"})
 
       assert %{"id" => ^id, "first_name" => "Jim", "last_name" => "Smith"} = body
 
-      assert %{status: 204} = Req.delete!(req, url: "/contacts/#{id}")
+      assert %{status: 204} = Req.delete!(req, url: "/<%= @plural_model_name %>/#{id}")
 
-      assert %{status: 404} = Req.get!(req, url: "/contacts/#{id}")
+      assert %{status: 404} = Req.get!(req, url: "/<%= @plural_model_name %>/#{id}")
 
       assert %{status: 404} =
-               Req.patch!(req, url: "/contacts/#{id}", json: %{"first_name" => "Jim"})
+               Req.patch!(req, url: "/<%= @plural_model_name %>/#{id}", json: %{"first_name" => "Jim"})
 
-      assert %{status: 404} = Req.delete!(req, url: "/contacts/#{id}")
+      assert %{status: 404} = Req.delete!(req, url: "/<%= @plural_model_name %>/#{id}")
 
-      assert %{status: 200, body: %{"contacts" => []}} = Req.get!(req, url: "/contacts")
+      assert %{status: 200, body: %{"<%= @plural_model_name %>" => []}} = Req.get!(req, url: "/<%= @plural_model_name %>")
     end
 
-    test "contacts are returned in the order they are inserted" do
+    test "<%= @plural_model_name %> are returned in the order they are inserted" do
       sim = start_supervised!(<%= @sim_namespace_basename %>)
       {:ok, account} = <%= @sim_namespace_basename %>.create_account(sim)
       req = sim |> build_req() |> attach_account_auth(account)
 
-      <%= @sim_namespace_basename %>.create_contact(sim, account.id, first_name: "Contact 1")
-      <%= @sim_namespace_basename %>.create_contact(sim, account.id, first_name: "Contact 2")
-      <%= @sim_namespace_basename %>.create_contact(sim, account.id, first_name: "Contact 3")
+      <%= @sim_namespace_basename %>.create_<%= @model_name %>(sim, account.id, first_name: "<%= @model_name %> 1")
+      <%= @sim_namespace_basename %>.create_<%= @model_name %>(sim, account.id, first_name: "<%= @model_name %> 2")
+      <%= @sim_namespace_basename %>.create_<%= @model_name %>(sim, account.id, first_name: "<%= @model_name %> 3")
 
-      assert %{status: 200, body: body} = Req.get!(req, url: "/contacts")
+      assert %{status: 200, body: body} = Req.get!(req, url: "/<%= @plural_model_name %>")
 
-      assert get_in(body, ["contacts", Access.all(), "first_name"]) ==
-               ["Contact 1", "Contact 2", "Contact 3"]
+      assert get_in(body, ["<%= @plural_model_name %>", Access.all(), "first_name"]) ==
+               ["<%= @model_name %> 1", "<%= @model_name %> 2", "<%= @model_name %> 3"]
     end
 
-    test "contacts are separated by account" do
+    test "<%= @plural_model_name %> are separated by account" do
       sim = start_supervised!(<%= @sim_namespace_basename %>)
       {:ok, account_1} = <%= @sim_namespace_basename %>.create_account(sim)
-      <%= @sim_namespace_basename %>.create_contact(sim, account_1.id, first_name: "Contact")
+      <%= @sim_namespace_basename %>.create_<%= @model_name %>(sim, account_1.id, first_name: "<%= @model_name %>")
       account_1_req = sim |> build_req() |> attach_account_auth(account_1)
 
       {:ok, account_2} = <%= @sim_namespace_basename %>.create_account(sim)
       account_2_req = sim |> build_req() |> attach_account_auth(account_2)
 
-      assert %{status: 200, body: %{"contacts" => [_]}} =
-               Req.get!(account_1_req, url: "/contacts")
+      assert %{status: 200, body: %{"<%= @plural_model_name %>" => [_]}} =
+               Req.get!(account_1_req, url: "/<%= @plural_model_name %>")
 
-      assert %{status: 200, body: %{"contacts" => []}} = Req.get!(account_2_req, url: "/contacts")
+      assert %{status: 200, body: %{"<%= @plural_model_name %>" => []}} = Req.get!(account_2_req, url: "/<%= @plural_model_name %>")
     end
   end
 
@@ -118,14 +118,14 @@ defmodule <%= @module %> do
 
       <%= @sim_namespace_basename %>.trigger_internal_server_errors(sim, :all)
 
-      assert Req.get!(req, url: "/contacts").status == 500
+      assert Req.get!(req, url: "/<%= @plural_model_name %>").status == 500
       assert Req.get!(req, url: "/status").status == 500
-      assert Req.get!(req, url: "/contacts/abc123").status == 500
+      assert Req.get!(req, url: "/<%= @plural_model_name %>/abc123").status == 500
 
       <%= @sim_namespace_basename %>.clear_triggered_responses(sim)
 
       assert Req.get!(req, url: "/status").status == 200
-      assert Req.get!(req, url: "/contacts").status == 401
+      assert Req.get!(req, url: "/<%= @plural_model_name %>").status == 401
     end
 
     test "per endpoint" do
@@ -133,19 +133,19 @@ defmodule <%= @module %> do
       {:ok, account} = <%= @sim_namespace_basename %>.create_account(sim)
       req = sim |> build_req() |> attach_account_auth(account)
 
-      <%= @sim_namespace_basename %>.trigger_internal_server_errors(sim, :create_contact)
+      <%= @sim_namespace_basename %>.trigger_internal_server_errors(sim, :create_<%= @model_name %>)
 
       assert %{status: 500} =
                Req.post!(req,
-                 url: "/contacts",
+                 url: "/<%= @plural_model_name %>",
                  json: %{"first_name" => "Joe", "last_name" => "Smith"}
                )
 
-      assert %{status: 200, body: %{"contacts" => []}} = Req.get!(req, url: "/contacts")
+      assert %{status: 200, body: %{"<%= @plural_model_name %>" => []}} = Req.get!(req, url: "/<%= @plural_model_name %>")
 
-      <%= @sim_namespace_basename %>.trigger_invalid_responses(sim, :list_contacts)
+      <%= @sim_namespace_basename %>.trigger_invalid_responses(sim, :list_<%= @plural_model_name %>)
 
-      assert %{status: 200, body: "Invalid"} = Req.get!(req, url: "/contacts")
+      assert %{status: 200, body: "Invalid"} = Req.get!(req, url: "/<%= @plural_model_name %>")
     end
   end
 

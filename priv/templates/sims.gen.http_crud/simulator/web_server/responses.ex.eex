@@ -1,15 +1,15 @@
 defmodule <%= @module %> do
   @moduledoc false
 
-  def render_contacts(contacts) when is_list(contacts) do
-    %{"contacts" => Enum.map(contacts, &render_contact/1)}
+  def render_<%= @plural_model_name %>(<%= @plural_model_name %>) when is_list(<%= @plural_model_name %>) do
+    %{"<%= @plural_model_name %>" => Enum.map(<%= @plural_model_name %>, &render_<%= @model_name %>/1)}
   end
 
-  def render_contact(contact) do
+  def render_<%= @model_name %>(<%= @model_name %>) do
     %{
-      "id" => contact.id,
-      "first_name" => contact.first_name,
-      "last_name" => contact.last_name
+      "id" => <%= @model_name %>.id,
+      "first_name" => <%= @model_name %>.first_name,
+      "last_name" => <%= @model_name %>.last_name
     }
   end
 

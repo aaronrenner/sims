@@ -7,7 +7,7 @@ defmodule <%= @module %> do
   def new do
     %{
       accounts: [],
-      contacts: %{},
+      <%= @plural_model_name %>: %{},
       response_stubs: %{}
     }
   end
@@ -23,7 +23,7 @@ defmodule <%= @module %> do
       %{
         state
         | accounts: [account | state.accounts],
-          contacts: Map.put(state.contacts, account.id, %{})
+          <%= @plural_model_name %>: Map.put(state.<%= @plural_model_name %>, account.id, %{})
       }}}
   end
 
@@ -34,8 +34,8 @@ defmodule <%= @module %> do
     end
   end
 
-  def create_contact(state, account_id, params) do
-    contact =
+  def create_<%= @model_name %>(state, account_id, params) do
+    <%= @model_name %> =
       params
       |> Map.new()
       |> Map.take([:first_name, :last_name])
@@ -46,61 +46,61 @@ defmodule <%= @module %> do
       |> Map.put(:created_at, DateTime.utc_now())
 
     {:ok,
-     {contact,
+     {<%= @model_name %>,
       %{
         state
-        | contacts:
+        | <%= @plural_model_name %>:
             Map.update(
-              state.contacts,
+              state.<%= @plural_model_name %>,
               account_id,
-              %{contact.id => contact},
-              &Map.put(&1, contact.id, contact)
+              %{<%= @model_name %>.id => <%= @model_name %>},
+              &Map.put(&1, <%= @model_name %>.id, <%= @model_name %>)
             )
       }}}
   end
 
-  def fetch_contact(state, account_id, id) do
-    case get_in(state.contacts, [account_id, id]) do
-      %{} = contact -> {:ok, contact}
+  def fetch_<%= @model_name %>(state, account_id, id) do
+    case get_in(state.<%= @plural_model_name %>, [account_id, id]) do
+      %{} = <%= @model_name %> -> {:ok, <%= @model_name %>}
       nil -> {:error, :not_found}
     end
   end
 
-  def list_contacts(state, account_id) do
-    state.contacts
+  def list_<%= @plural_model_name %>(state, account_id) do
+    state.<%= @plural_model_name %>
     |> Map.get(account_id, %{})
     |> Map.values()
     |> Enum.sort_by(&DateTime.to_unix(&1.created_at, :native))
   end
 
-  def update_contact(state, account_id, id, params) do
-    {contact, updated_contacts} =
-      get_and_update_in(state.contacts, [account_id, id], fn
+  def update_<%= @model_name %>(state, account_id, id, params) do
+    {<%= @model_name %>, updated_<%= @plural_model_name %>} =
+      get_and_update_in(state.<%= @plural_model_name %>, [account_id, id], fn
         nil ->
           :pop
 
-        contact ->
+        <%= @model_name %> ->
           updated_fields =
             params
             |> Map.new()
             |> Map.take([:first_name, :last_name])
 
-          contact = Map.merge(contact, updated_fields)
-          {contact, contact}
+          <%= @model_name %> = Map.merge(<%= @model_name %>, updated_fields)
+          {<%= @model_name %>, <%= @model_name %>}
       end)
 
-    case contact do
+    case <%= @model_name %> do
       nil -> {:error, :not_found}
-      %{} -> {:ok, {contact, %{state | contacts: updated_contacts}}}
+      %{} -> {:ok, {<%= @model_name %>, %{state | <%= @plural_model_name %>: updated_<%= @plural_model_name %>}}}
     end
   end
 
-  def delete_contact(state, account_id, id) do
-    {contact, updated_contacts} =
-      get_and_update_in(state.contacts, [account_id, id], fn _contact -> :pop end)
+  def delete_<%= @model_name %>(state, account_id, id) do
+    {<%= @model_name %>, updated_<%= @plural_model_name %>} =
+      get_and_update_in(state.<%= @plural_model_name %>, [account_id, id], fn _<%= @model_name %> -> :pop end)
 
-    case contact do
-      %{} -> {:ok, %{state | contacts: updated_contacts}}
+    case <%= @model_name %> do
+      %{} -> {:ok, %{state | <%= @plural_model_name %>: updated_<%= @plural_model_name %>}}
       nil -> {:error, :not_found}
     end
   end
