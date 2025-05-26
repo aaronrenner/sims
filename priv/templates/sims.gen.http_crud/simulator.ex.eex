@@ -1,10 +1,10 @@
-defmodule MyApp.AddressBookSimulator do
+defmodule <%= @module %> do
   @moduledoc """
   Simulator for an Address Book server
   """
-  alias MyApp.AddressBookSimulator.PortCache
-  alias MyApp.AddressBookSimulator.StateServer
-  alias MyApp.AddressBookSimulator.WebServer
+  alias <%= @module %>.PortCache
+  alias <%= @module %>.StateServer
+  alias <%= @module %>.WebServer
 
   @type t :: pid
 

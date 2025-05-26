@@ -1,10 +1,10 @@
-defmodule Sims.Integration.AddressBookSimulatorTest do
+defmodule <%= @module %> do
   use ExUnit.Case, async: true
 
-  alias MyApp.AddressBookSimulator
+  alias <%= @sim_namespace %>
 
   test "simulator starts successfully" do
-    sim = start_supervised!(AddressBookSimulator)
+    sim = start_supervised!(<%= @sim_namespace_basename %>)
     req = build_req(sim)
 
     response = Req.get!(req, url: "/status")
@@ -14,22 +14,22 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
   end
 
   test "allows for closing and reopening a connection" do
-    sim = start_supervised!(AddressBookSimulator)
+    sim = start_supervised!(<%= @sim_namespace_basename %>)
     req = build_req(sim)
 
-    AddressBookSimulator.down(sim)
+    <%= @sim_namespace_basename %>.down(sim)
 
     assert {:error, %Req.TransportError{reason: :econnrefused}} =
              Req.request(req, url: "/status")
 
-    AddressBookSimulator.up(sim)
+    <%= @sim_namespace_basename %>.up(sim)
 
     assert Req.get!(req, url: "/status").status == 200
   end
 
   test "requires an API token" do
-    sim = start_supervised!(AddressBookSimulator)
-    {:ok, account} = AddressBookSimulator.create_account(sim)
+    sim = start_supervised!(<%= @sim_namespace_basename %>)
+    {:ok, account} = <%= @sim_namespace_basename %>.create_account(sim)
     req = build_req(sim)
 
     assert Req.get!(req, url: "/contacts").status == 401
@@ -42,8 +42,8 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
 
   describe "simulator business logic" do
     test "contact crud" do
-      sim = start_supervised!(AddressBookSimulator)
-      {:ok, account} = AddressBookSimulator.create_account(sim)
+      sim = start_supervised!(<%= @sim_namespace_basename %>)
+      {:ok, account} = <%= @sim_namespace_basename %>.create_account(sim)
       req = sim |> build_req() |> attach_account_auth(account)
 
       assert resp =
@@ -81,13 +81,13 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
     end
 
     test "contacts are returned in the order they are inserted" do
-      sim = start_supervised!(AddressBookSimulator)
-      {:ok, account} = AddressBookSimulator.create_account(sim)
+      sim = start_supervised!(<%= @sim_namespace_basename %>)
+      {:ok, account} = <%= @sim_namespace_basename %>.create_account(sim)
       req = sim |> build_req() |> attach_account_auth(account)
 
-      AddressBookSimulator.create_contact(sim, account.id, first_name: "Contact 1")
-      AddressBookSimulator.create_contact(sim, account.id, first_name: "Contact 2")
-      AddressBookSimulator.create_contact(sim, account.id, first_name: "Contact 3")
+      <%= @sim_namespace_basename %>.create_contact(sim, account.id, first_name: "Contact 1")
+      <%= @sim_namespace_basename %>.create_contact(sim, account.id, first_name: "Contact 2")
+      <%= @sim_namespace_basename %>.create_contact(sim, account.id, first_name: "Contact 3")
 
       assert %{status: 200, body: body} = Req.get!(req, url: "/contacts")
 
@@ -96,12 +96,12 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
     end
 
     test "contacts are separated by account" do
-      sim = start_supervised!(AddressBookSimulator)
-      {:ok, account_1} = AddressBookSimulator.create_account(sim)
-      AddressBookSimulator.create_contact(sim, account_1.id, first_name: "Contact")
+      sim = start_supervised!(<%= @sim_namespace_basename %>)
+      {:ok, account_1} = <%= @sim_namespace_basename %>.create_account(sim)
+      <%= @sim_namespace_basename %>.create_contact(sim, account_1.id, first_name: "Contact")
       account_1_req = sim |> build_req() |> attach_account_auth(account_1)
 
-      {:ok, account_2} = AddressBookSimulator.create_account(sim)
+      {:ok, account_2} = <%= @sim_namespace_basename %>.create_account(sim)
       account_2_req = sim |> build_req() |> attach_account_auth(account_2)
 
       assert %{status: 200, body: %{"contacts" => [_]}} =
@@ -113,27 +113,27 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
 
   describe "triggering errors" do
     test "globally" do
-      sim = start_supervised!(AddressBookSimulator)
+      sim = start_supervised!(<%= @sim_namespace_basename %>)
       req = build_req(sim)
 
-      AddressBookSimulator.trigger_internal_server_errors(sim, :all)
+      <%= @sim_namespace_basename %>.trigger_internal_server_errors(sim, :all)
 
       assert Req.get!(req, url: "/contacts").status == 500
       assert Req.get!(req, url: "/status").status == 500
       assert Req.get!(req, url: "/contacts/abc123").status == 500
 
-      AddressBookSimulator.clear_triggered_responses(sim)
+      <%= @sim_namespace_basename %>.clear_triggered_responses(sim)
 
       assert Req.get!(req, url: "/status").status == 200
       assert Req.get!(req, url: "/contacts").status == 401
     end
 
     test "per endpoint" do
-      sim = start_supervised!(AddressBookSimulator)
-      {:ok, account} = AddressBookSimulator.create_account(sim)
+      sim = start_supervised!(<%= @sim_namespace_basename %>)
+      {:ok, account} = <%= @sim_namespace_basename %>.create_account(sim)
       req = sim |> build_req() |> attach_account_auth(account)
 
-      AddressBookSimulator.trigger_internal_server_errors(sim, :create_contact)
+      <%= @sim_namespace_basename %>.trigger_internal_server_errors(sim, :create_contact)
 
       assert %{status: 500} =
                Req.post!(req,
@@ -143,14 +143,14 @@ defmodule Sims.Integration.AddressBookSimulatorTest do
 
       assert %{status: 200, body: %{"contacts" => []}} = Req.get!(req, url: "/contacts")
 
-      AddressBookSimulator.trigger_invalid_responses(sim, :list_contacts)
+      <%= @sim_namespace_basename %>.trigger_invalid_responses(sim, :list_contacts)
 
       assert %{status: 200, body: "Invalid"} = Req.get!(req, url: "/contacts")
     end
   end
 
   defp build_req(sim) do
-    Req.new(base_url: AddressBookSimulator.base_url(sim), retry: false)
+    Req.new(base_url: <%= @sim_namespace_basename %>.base_url(sim), retry: false)
   end
 
   defp attach_account_auth(req, account) do
