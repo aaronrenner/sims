@@ -1,6 +1,8 @@
 defmodule Mix.Tasks.Sims.Gen.BasicHttp do
   use Igniter.Mix.Task
 
+  alias Mix.Sims.Simulator
+
   @example "mix sims.gen.basic_http MySimulator"
 
   @shortdoc "Generates a basic HTTP simulator"
@@ -56,11 +58,20 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttp do
 
   @impl Igniter.Mix.Task
   def igniter(igniter) do
+    validate_args!(igniter.args)
+
     sim_base_name = igniter.args.positional.name
     sim_base_module_name = Igniter.Project.Module.module_name(igniter, sim_base_name)
 
+    simulator =
+      Simulator.new(
+        Igniter.Project.Module.module_name_prefix(igniter),
+        igniter.args.positional.name
+      )
+
     igniter
     |> Igniter.Project.Test.ensure_test_support()
+    |> Igniter.assign(:simulator, simulator)
     |> Igniter.assign(:sim_namespace, sim_base_module_name)
     |> copy_simulator_template("simulator.ex.eex")
     |> copy_simulator_template("simulator/port_cache.ex.eex", PortCache)
@@ -74,16 +85,14 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttp do
     |> Igniter.Project.Formatter.import_dep(:plug)
     |> then(fn igniter ->
       if igniter.args.options[:include_tests] do
-        sim_namespace = igniter.assigns.sim_namespace
-        module = :"#{sim_base_module_name}Test"
+        module = :"#{igniter.assigns.simulator.namespace}Test"
 
         igniter
         |> Igniter.copy_template(
           Path.join(base_template_path(), "simulator_test.exs.eex"),
           Igniter.Project.Module.proper_location(igniter, module, :test),
-          module: inspect(module),
-          sim_namespace: inspect(sim_namespace),
-          sim_namespace_basename: sim_namespace |> Module.split() |> List.last()
+          module: module,
+          simulator: igniter.assigns.simulator
         )
         |> Igniter.Project.Deps.add_dep({:req, "~> 0.5"}, append?: true)
       else
@@ -97,16 +106,25 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttp do
          template_path,
          child_module_name \\ nil
        ) do
-    sim_namespace = igniter.assigns.sim_namespace
-    module = Module.concat(sim_namespace, child_module_name)
+    module = Module.concat(igniter.assigns.simulator.namespace, child_module_name)
 
     Igniter.copy_template(
       igniter,
       Path.join(base_template_path(), template_path),
       Igniter.Project.Module.proper_location(igniter, module, :test_support),
-      module: inspect(module),
-      sim_namespace: inspect(sim_namespace)
+      module: module,
+      simulator: igniter.assigns.simulator
     )
+  end
+
+  defp validate_args!(args) do
+    simulator_name = args.positional.name
+
+    if not Simulator.valid?(simulator_name) do
+      Mix.raise("""
+      Expected the simulator, #{inspect(simulator_name)} to be a valid module name
+      """)
+    end
   end
 
   defp base_template_path do

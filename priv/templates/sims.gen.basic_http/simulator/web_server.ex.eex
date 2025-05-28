@@ -1,8 +1,8 @@
-defmodule <%= @module %> do
+defmodule <%= inspect @module %> do
   @moduledoc false
 
-  alias <%= @sim_namespace %>.PortCache
-  alias <%= @module %>.Router
+  alias <%= inspect @simulator.namespace %>.PortCache
+  alias <%= inspect @module %>.Router
 
   def child_spec(opts) do
     %{

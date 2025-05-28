@@ -1,11 +1,11 @@
-defmodule <%= @module %> do
+defmodule <%= inspect @module %> do
   @moduledoc """
-  A basic HTTP simulator
+  A <%= @simulator.human_name %> simulator
   """
 
-  alias <%= @module %>.PortCache
-  alias <%= @module %>.StateServer
-  alias <%= @module %>.WebServer
+  alias <%= inspect @simulator.namespace %>.PortCache
+  alias <%= inspect @simulator.namespace %>.StateServer
+  alias <%= inspect @simulator.namespace %>.WebServer
 
   @type t :: pid
   @type route_id :: atom

@@ -1,9 +1,9 @@
-defmodule <%= @module %> do
+defmodule <%= inspect @module %> do
   @moduledoc false
 
   use Plug.Router
 
-  alias <%= @sim_namespace %>.WebServer.Responses
+  alias <%= inspect @simulator.namespace %>.WebServer.Responses
 
   plug :match
   plug :fetch_query_params

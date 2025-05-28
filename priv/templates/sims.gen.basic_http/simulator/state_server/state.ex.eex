@@ -1,4 +1,4 @@
-defmodule <%= @module %> do
+defmodule <%= inspect @module %> do
   @moduledoc false
 
   @type t :: map()
