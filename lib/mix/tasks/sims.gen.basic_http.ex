@@ -60,9 +60,6 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttp do
   def igniter(igniter) do
     validate_args!(igniter.args)
 
-    sim_base_name = igniter.args.positional.name
-    sim_base_module_name = Igniter.Project.Module.module_name(igniter, sim_base_name)
-
     simulator =
       Simulator.new(
         Igniter.Project.Module.module_name_prefix(igniter),
@@ -72,7 +69,6 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttp do
     igniter
     |> Igniter.Project.Test.ensure_test_support()
     |> Igniter.assign(:simulator, simulator)
-    |> Igniter.assign(:sim_namespace, sim_base_module_name)
     |> copy_simulator_template("simulator.ex.eex")
     |> copy_simulator_template("simulator/port_cache.ex.eex", PortCache)
     |> copy_simulator_template("simulator/state_server.ex.eex", StateServer)
