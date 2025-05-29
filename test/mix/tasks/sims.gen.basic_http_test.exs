@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Sims.Gen.HttpCrudTest do
+defmodule Mix.Tasks.Sims.Gen.BasicHttpTest do
   use ExUnit.Case, async: true
 
   import Igniter.Test
