@@ -1,10 +1,10 @@
-defmodule MyApp.AddressBookSimulator.WebServer.Router do
+defmodule <%= inspect @module %> do
   @moduledoc false
 
   use Plug.Router
 
-  alias MyApp.AddressBookSimulator.StateServer
-  alias MyApp.AddressBookSimulator.WebServer.Responses
+  alias <%= @simulator.namespace %>.StateServer
+  alias <%= @simulator.namespace %>.WebServer.Responses
 
   plug :match
   plug :fetch_query_params

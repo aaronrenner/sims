@@ -1,8 +1,8 @@
-defmodule MyApp.AddressBookSimulator.WebServer do
+defmodule <%= inspect @module %> do
   @moduledoc false
 
-  alias MyApp.AddressBookSimulator.PortCache
-  alias MyApp.AddressBookSimulator.WebServer.Router
+  alias <%= inspect @simulator.namespace %>.PortCache
+  alias <%= inspect @module %>.Router
 
   def child_spec(opts) do
     %{
