@@ -23,6 +23,7 @@ defmodule Sims.MixProject do
   defp deps do
     [
       {:igniter, "~> 0.5"},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
