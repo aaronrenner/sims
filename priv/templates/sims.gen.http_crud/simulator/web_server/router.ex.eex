@@ -28,54 +28,54 @@ defmodule <%= inspect @module %> do
     |> super(opts)
   end
 
-  get "/contacts", assigns: %{endpoint_id: :list_contacts} do
-    contacts = StateServer.list_contacts(conn.assigns.state_server, conn.assigns.account_id)
+  get "/<%= @model.plural %>", assigns: %{endpoint_id: :list_<%= @model.plural %>} do
+    <%= @model.plural %> = StateServer.list_<%= @model.plural %>(conn.assigns.state_server, conn.assigns.account_id)
 
-    send_json_resp(conn, 200, Responses.render_contacts(contacts))
+    send_json_resp(conn, 200, Responses.render_<%= @model.plural %>(<%= @model.plural %>))
   end
 
-  post "/contacts", assigns: %{endpoint_id: :create_contact} do
-    params = parse_contact_params(conn.params)
+  post "/<%= @model.plural %>", assigns: %{endpoint_id: :create_<%= @model.name %>} do
+    params = parse_<%= @model.name %>_params(conn.params)
 
-    case StateServer.create_contact(conn.assigns.state_server, conn.assigns.account_id, params) do
-      {:ok, contact} ->
-        send_json_resp(conn, 201, Responses.render_contact(contact))
+    case StateServer.create_<%= @model.name %>(conn.assigns.state_server, conn.assigns.account_id, params) do
+      {:ok, <%= @model.name %>} ->
+        send_json_resp(conn, 201, Responses.render_<%= @model.name %>(<%= @model.name %>))
     end
   end
 
-  get "/contacts/:id", assigns: %{endpoint_id: :show_contact} do
-    case StateServer.fetch_contact(
+  get "/<%= @model.plural %>/:id", assigns: %{endpoint_id: :show_<%= @model.name %>} do
+    case StateServer.fetch_<%= @model.name %>(
            conn.assigns.state_server,
            conn.assigns.account_id,
            conn.path_params["id"]
          ) do
-      {:ok, contact} ->
-        send_json_resp(conn, 200, Responses.render_contact(contact))
+      {:ok, <%= @model.name %>} ->
+        send_json_resp(conn, 200, Responses.render_<%= @model.name %>(<%= @model.name %>))
 
       {:error, :not_found} ->
         send_json_resp(conn, 404)
     end
   end
 
-  patch "/contacts/:id", assigns: %{endpoint_id: :update_contact} do
-    params = parse_contact_params(conn.params)
+  patch "/<%= @model.plural %>/:id", assigns: %{endpoint_id: :update_<%= @model.name %>} do
+    params = parse_<%= @model.name %>_params(conn.params)
 
-    case StateServer.update_contact(
+    case StateServer.update_<%= @model.name %>(
            conn.assigns.state_server,
            conn.assigns.account_id,
            conn.path_params["id"],
            params
          ) do
-      {:ok, contact} ->
-        send_json_resp(conn, 200, Responses.render_contact(contact))
+      {:ok, <%= @model.name %>} ->
+        send_json_resp(conn, 200, Responses.render_<%= @model.name %>(<%= @model.name %>))
 
       {:error, :not_found} ->
         send_json_resp(conn, 404)
     end
   end
 
-  delete "/contacts/:id", assigns: %{endpoint_id: :delete_contact} do
-    case StateServer.delete_contact(
+  delete "/<%= @model.plural %>/:id", assigns: %{endpoint_id: :delete_<%= @model.name %>} do
+    case StateServer.delete_<%= @model.name %>(
            conn.assigns.state_server,
            conn.assigns.account_id,
            conn.path_params["id"]
@@ -92,7 +92,7 @@ defmodule <%= inspect @module %> do
     send_resp(conn, 200, "Up!")
   end
 
-  defp parse_contact_params(params) do
+  defp parse_<%= @model.name %>_params(params) do
     Enum.flat_map(params, fn
       {"first_name", val} -> [{:first_name, val}]
       {"last_name", val} -> [{:last_name, val}]

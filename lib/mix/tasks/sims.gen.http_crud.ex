@@ -1,9 +1,10 @@
 defmodule Mix.Tasks.Sims.Gen.HttpCrud do
   use Igniter.Mix.Task
 
+  alias Mix.Sims.Model
   alias Mix.Sims.Simulator
 
-  @example "mix sims.gen.http_crud AddressBook"
+  @example "mix sims.gen.http_crud AddressBook contact contacts"
 
   @shortdoc "Generates a HTTP simulator with CRUD functionality"
   @moduledoc """
@@ -37,7 +38,7 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
       # An example invocation
       example: @example,
       # a list of positional arguments, i.e `[:file]`
-      positional: [:name],
+      positional: [:name, :model_name, :plural_model_name],
       # Other tasks your task composes using `Igniter.compose_task`, passing in the CLI argv
       # This ensures your option schema includes options from nested tasks
       composes: [],
@@ -66,9 +67,16 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
         igniter.args.positional.name
       )
 
+    model =
+      Model.new(
+        igniter.args.positional.model_name,
+        igniter.args.positional.plural_model_name
+      )
+
     igniter
     |> Igniter.Project.Test.ensure_test_support()
     |> Igniter.assign(:simulator, simulator)
+    |> Igniter.assign(:model, model)
     |> copy_simulator_template("simulator.ex.eex")
     |> copy_simulator_template("simulator/port_cache.ex.eex", PortCache)
     |> copy_simulator_template("simulator/state_server.ex.eex", StateServer)
@@ -88,7 +96,8 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
           Path.join(base_template_path(), "simulator_test.exs.eex"),
           Igniter.Project.Module.proper_location(igniter, module, :test),
           module: module,
-          simulator: igniter.assigns.simulator
+          simulator: igniter.assigns.simulator,
+          model: igniter.assigns.model
         )
         |> Igniter.Project.Deps.add_dep({:req, "~> 0.5"}, append?: true)
       else
@@ -109,7 +118,8 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
       Path.join(base_template_path(), template_path),
       Igniter.Project.Module.proper_location(igniter, module, :test_support),
       module: module,
-      simulator: igniter.assigns.simulator
+      simulator: igniter.assigns.simulator,
+      model: igniter.assigns.model
     )
   end
 
@@ -119,6 +129,14 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
     if not Simulator.valid?(simulator_name) do
       Mix.raise("""
       Expected the simulator, #{inspect(simulator_name)} to be a valid module name
+      """)
+    end
+
+    model_name = args.positional.model_name
+
+    if not Model.valid?(model_name) do
+      Mix.raise("""
+      Expected the simulator, #{inspect(model_name)}, to be a valid module name
       """)
     end
   end

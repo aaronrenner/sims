@@ -36,4 +36,15 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrudTest do
       |> Igniter.compose_task("sims.gen.http_crud", ["Foo Bar", "bar", "bars"])
     end
   end
+
+  test "errors when passing a model name with invalid characters" do
+    assert_raise Mix.Error, ~r/to be a valid module name/, fn ->
+      test_project()
+      |> Igniter.compose_task("sims.gen.http_crud", [
+        "AddressBook",
+        "personal contact",
+        "personal contacts"
+      ])
+    end
+  end
 end

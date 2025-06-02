@@ -27,38 +27,38 @@ defmodule <%= inspect @module %> do
     |> State.fetch_account_from_credentials(account_id, auth_token)
   end
 
-  def create_contact(state_server, account_id, fields) do
+  def create_<%= @model.name %>(state_server, account_id, fields) do
     Agent.get_and_update(state_server, fn state ->
-      case State.create_contact(state, account_id, fields) do
-        {:ok, {contact, state}} -> {{:ok, contact}, state}
+      case State.create_<%= @model.name %>(state, account_id, fields) do
+        {:ok, {<%= @model.name %>, state}} -> {{:ok, <%= @model.name %>}, state}
       end
     end)
   end
 
-  def fetch_contact(server, account_id, contact_id) do
+  def fetch_<%= @model.name %>(server, account_id, <%= @model.name %>_id) do
     server
     |> get_state()
-    |> State.fetch_contact(account_id, contact_id)
+    |> State.fetch_<%= @model.name %>(account_id, <%= @model.name %>_id)
   end
 
-  def list_contacts(server, account_id) do
+  def list_<%= @model.plural %>(server, account_id) do
     server
     |> get_state()
-    |> State.list_contacts(account_id)
+    |> State.list_<%= @model.plural %>(account_id)
   end
 
-  def update_contact(state_server, account_id, contact_id, fields) do
+  def update_<%= @model.name %>(state_server, account_id, <%= @model.name %>_id, fields) do
     Agent.get_and_update(state_server, fn state ->
-      case State.update_contact(state, account_id, contact_id, fields) do
-        {:ok, {contact, state}} -> {{:ok, contact}, state}
+      case State.update_<%= @model.name %>(state, account_id, <%= @model.name %>_id, fields) do
+        {:ok, {<%= @model.name %>, state}} -> {{:ok, <%= @model.name %>}, state}
         {:error, :not_found} -> {{:error, :not_found}, state}
       end
     end)
   end
 
-  def delete_contact(state_server, account_id, contact_id) do
+  def delete_<%= @model.name %>(state_server, account_id, <%= @model.name %>_id) do
     Agent.get_and_update(state_server, fn state ->
-      case State.delete_contact(state, account_id, contact_id) do
+      case State.delete_<%= @model.name %>(state, account_id, <%= @model.name %>_id) do
         {:ok, state} -> {:ok, state}
         {:error, :not_found} -> {{:error, :not_found}, state}
       end

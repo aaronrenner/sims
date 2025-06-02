@@ -10,18 +10,18 @@ defmodule <%= inspect @module %> do
 
   @type route_id ::
           :all
-          | :list_contacts
-          | :create_contact
-          | :show_contact
-          | :update_contact
-          | :delete_contact
+          | :list_<%= @model.plural %>
+          | :create_<%= @model.name %>
+          | :show_<%= @model.name %>
+          | :update_<%= @model.name %>
+          | :delete_<%= @model.name %>
           | :status
 
   @type account_id :: String.t()
-  @type contact_id :: String.t()
+  @type <%= @model.name %>_id :: String.t()
   @type api_key :: String.t()
   @type account :: %{id: account_id, api_key: api_key}
-  @type contact :: %{id: contact_id, first_name: String.t(), last_name: String.t()}
+  @type <%= @model.name %> :: %{id: <%= @model.name %>_id, first_name: String.t(), last_name: String.t()}
 
   @doc false
   def child_spec(init_arg) do
@@ -93,13 +93,13 @@ defmodule <%= inspect @module %> do
   end
 
   @doc """
-  Creates a new contact
+  Creates a new <%= @model.name %>
   """
-  @spec create_contact(t, account_id, keyword) :: {:ok, contact}
-  def create_contact(sim, account_id, fields) when is_list(fields) do
+  @spec create_<%= @model.name %>(t, account_id, keyword) :: {:ok, <%= @model.name %>}
+  def create_<%= @model.name %>(sim, account_id, fields) when is_list(fields) do
     sim
     |> lookup_child_process!(StateServer)
-    |> StateServer.create_contact(account_id, fields)
+    |> StateServer.create_<%= @model.name %>(account_id, fields)
   end
 
   @doc """
