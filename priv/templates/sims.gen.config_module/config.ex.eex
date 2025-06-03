@@ -1,0 +1,13 @@
+defmodule <%= inspect @module %> do
+  @moduledoc """
+  Main configuration module for the application
+  """
+
+  alias <%= inspect @swappable_config.default_adapter %>
+
+  @behaviour <%= inspect @swappable_config.behaviour %>
+
+  defp adapter do
+   Application.get_env(<%= inspect @swappable_config.app_name %>, :config_adapter, <%= inspect @swappable_config.default_adapter_alias %>)
+  end
+end

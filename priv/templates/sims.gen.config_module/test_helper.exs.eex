@@ -1,0 +1,2 @@
+Mox.defmock(<%= inspect @swappable_config.test_adapter %>, for: <%= inspect @swappable_config.behaviour %>)
+Application.put_env(<%= inspect @swappable_config.app_name %>, :config_adapter, <%= inspect @swappable_config.test_adapter %>)

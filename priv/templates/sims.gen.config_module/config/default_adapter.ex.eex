@@ -1,0 +1,5 @@
+defmodule <%= inspect @module %> do
+  @moduledoc false
+
+  @behaviour <%= inspect @swappable_config.behaviour %>
+end
