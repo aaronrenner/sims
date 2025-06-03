@@ -1,0 +1,96 @@
+defmodule Mix.Tasks.Sims.Gen.ConfigModule do
+  use Igniter.Mix.Task
+
+  alias Mix.Sims.SwappableConfig
+
+  @example "mix sims.gen.config_module"
+
+  @shortdoc "Generate a swappable configuation module"
+  @moduledoc """
+  #{@shortdoc}
+
+  A centeralized configuration module is helpful so configuration can be swapped
+  during async tests via mox.
+
+  ## Example
+
+  ```sh
+  #{@example}
+  ```
+  """
+
+  @impl Igniter.Mix.Task
+  def info(_argv, _composing_task) do
+    %Igniter.Mix.Task.Info{
+      # Groups allow for overlapping arguments for tasks by the same author
+      # See the generators guide for more.
+      group: :sims,
+      # *other* dependencies to add
+      # i.e `{:foo, "~> 2.0"}`
+      adds_deps: [],
+      # *other* dependencies to add and call their associated installers, if they exist
+      # i.e `{:foo, "~> 2.0"}`
+      installs: [],
+      # An example invocation
+      example: @example,
+      # a list of positional arguments, i.e `[:file]`
+      positional: [],
+      # Other tasks your task composes using `Igniter.compose_task`, passing in the CLI argv
+      # This ensures your option schema includes options from nested tasks
+      composes: [],
+      # `OptionParser` schema
+      schema: [],
+      # Default values for the options in the `schema`
+      defaults: [],
+      # CLI aliases
+      aliases: [],
+      # A list of options in the schema that are required
+      required: []
+    }
+  end
+
+  @impl Igniter.Mix.Task
+  def igniter(igniter) do
+    swappable_config =
+      SwappableConfig.new(
+        Igniter.Project.Application.app_name(igniter),
+        Igniter.Project.Module.module_name(igniter, "Config")
+      )
+
+    igniter
+    |> Igniter.assign(:swappable_config, swappable_config)
+    |> Igniter.Project.Deps.add_dep({:mox, "~> 1.0", only: :test})
+    |> copy_template("config.ex.eex")
+    |> copy_template("config/adapter.ex.eex", Adapter)
+    |> copy_template("config/default_adapter.ex.eex", DefaultAdapter)
+    |> Igniter.update_elixir_file("test/test_helper.exs", fn zipper ->
+      Igniter.Code.Common.add_code(
+        zipper,
+        EEx.eval_file(
+          Path.join(base_template_path(), "test_helper.exs.eex"),
+          assigns: [swappable_config: swappable_config]
+        )
+      )
+    end)
+  end
+
+  defp copy_template(
+         igniter,
+         template_path,
+         child_module_name \\ nil
+       ) do
+    module = Module.concat(igniter.assigns.swappable_config.namespace, child_module_name)
+
+    Igniter.copy_template(
+      igniter,
+      Path.join(base_template_path(), template_path),
+      Igniter.Project.Module.proper_location(igniter, module),
+      module: module,
+      swappable_config: igniter.assigns.swappable_config
+    )
+  end
+
+  defp base_template_path do
+    Application.app_dir(:sims, "priv/templates/sims.gen.config_module")
+  end
+end
