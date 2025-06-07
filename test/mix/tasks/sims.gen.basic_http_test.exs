@@ -8,6 +8,73 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttpTest do
       test_project(app_name: :my_app)
       |> Igniter.compose_task("sims.gen.basic_http", ~w(PaymentGateway))
       |> assert_creates("test/support/payment_gateway_simulator.ex")
+      |> assert_creates("test/support/simulator_helpers.ex")
+      |> assert_creates("lib/my_app/config.ex", """
+      defmodule MyApp.Config do
+        @moduledoc \"""
+        Main configuration module for the application
+        \"""
+
+        alias MyApp.Config.DefaultAdapter
+
+        @behaviour MyApp.Config.Adapter
+
+        @doc \"""
+        Base url for the Payment Gateway server
+        \"""
+        @impl true
+        def payment_gateway_base_url do
+          adapter().payment_gateway_base_url()
+        end
+
+        defp adapter do
+          Application.get_env(:my_app, :config_adapter, DefaultAdapter)
+        end
+      end
+      """)
+      |> assert_creates("lib/my_app/config/adapter.ex", """
+      defmodule MyApp.Config.Adapter do
+        @moduledoc false
+        @callback payment_gateway_base_url() :: String.t()
+      end
+      """)
+      |> assert_creates("lib/my_app/config/default_adapter.ex", """
+      defmodule MyApp.Config.DefaultAdapter do
+        @moduledoc false
+
+        @behaviour MyApp.Config.Adapter
+        @impl true
+        def payment_gateway_base_url do
+          # TODO Configure this in config/config.exs or config/runtime.exs
+          Application.fetch_env!(:my_app, :payment_gateway_base_url)
+        end
+      end
+      """)
+      |> assert_creates("test/support/simulator_helpers.ex", """
+      defmodule MyApp.SimulatorHelpers do
+        @moduledoc \"""
+        Helper functions for configuring the application to work with test simulators.
+        \"""
+
+        import ExUnit.Callbacks
+
+        @doc \"""
+        Configure the application to use the Payment Gateway simulator.
+        \"""
+        def configure_for_payment_gateway_simulator(_tags) do
+          sim = start_supervised!(MyApp.PaymentGatewaySimulator)
+
+          base_url = MyApp.PaymentGatewaySimulator.base_url(sim)
+          Mox.stub(MyApp.Config.MockAdapter, :payment_gateway_base_url, fn -> base_url end)
+
+          [payment_gateway_simulator: sim]
+        end
+      end
+      """)
+      |> assert_has_patch("test/test_helper.exs", """
+      + |Mox.defmock(MyApp.Config.MockAdapter, for: MyApp.Config.Adapter)
+      + |Application.put_env(:my_app, :config_adapter, MyApp.Config.MockAdapter)
+      """)
 
     diff = diff(igniter)
 
@@ -57,6 +124,14 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttpTest do
     diff = diff(igniter)
 
     assert diff =~ "def trigger_internal_server_errors"
+  end
+
+  test "does not generate config with --no-include-app-config" do
+    test_project(app_name: :my_app)
+    |> Igniter.compose_task("sims.gen.basic_http", ~w(PaymentGateway --no-include-app-config))
+    |> refute_creates("lib/my_app/config.ex")
+    |> refute_creates("lib/my_app/config/adapter.ex")
+    |> refute_creates("lib/my_app/config/default_adapter.ex")
   end
 
   test "errors when passing a simulator name with invalid characters" do

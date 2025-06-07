@@ -1,0 +1,7 @@
+@doc """
+Base url for the <%= @simulator.human_name %> server
+"""
+@impl true
+def <%= @simulator.underscore_name %>_base_url do
+  adapter().<%= @simulator.underscore_name %>_base_url()
+end

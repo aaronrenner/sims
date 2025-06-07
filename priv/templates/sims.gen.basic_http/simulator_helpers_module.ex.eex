@@ -1,0 +1,8 @@
+defmodule <%= inspect @module %> do
+  @moduledoc """
+  Helper functions for configuring the application to work with test simulators.
+  """
+
+  import ExUnit.Callbacks
+
+end

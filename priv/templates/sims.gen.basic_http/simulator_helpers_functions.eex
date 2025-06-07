@@ -1,0 +1,11 @@
+@doc """
+Configure the application to use the <%= @simulator.human_name %> simulator.
+"""
+def configure_for_<%= @simulator.underscore_name %>_simulator(_tags) do
+  sim = start_supervised!(<%= inspect(@simulator.namespace) %>)
+
+  base_url = <%= inspect(@simulator.namespace) %>.base_url(sim)
+  Mox.stub(<%= inspect(@swappable_config.test_adapter) %>, :<%= @simulator.underscore_name %>_base_url, fn -> base_url end)
+
+  [<%=@simulator.underscore_name %>_simulator: sim]
+end

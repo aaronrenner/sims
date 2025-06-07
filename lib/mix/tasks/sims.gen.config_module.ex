@@ -85,8 +85,11 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
       igniter,
       Path.join(base_template_path(), template_path),
       Igniter.Project.Module.proper_location(igniter, module),
-      module: module,
-      swappable_config: igniter.assigns.swappable_config
+      [
+        module: module,
+        swappable_config: igniter.assigns.swappable_config
+      ],
+      on_exists: :skip
     )
   end
 

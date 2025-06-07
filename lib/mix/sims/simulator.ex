@@ -1,7 +1,7 @@
 defmodule Mix.Sims.Simulator do
   @moduledoc false
 
-  defstruct namespace: nil, alias: nil, human_name: nil, options: %{}
+  defstruct namespace: nil, alias: nil, human_name: nil, underscore_name: nil, options: %{}
 
   def valid?(simulator_name) do
     simulator_name =~ ~r/^[A-Z]\w*(\.[A-Z]\w*)*$/
@@ -11,17 +11,19 @@ defmodule Mix.Sims.Simulator do
     namespace = Module.concat(project_module_name_prefix, "#{simulator_name}Simulator")
     alias_atom = namespace |> Module.split() |> List.last() |> Module.concat(nil)
 
-    human_name =
+    underscore_name =
       simulator_name
       |> String.split(".")
       |> List.last()
       |> Macro.underscore()
-      |> humanize()
+
+    human_name = humanize(underscore_name)
 
     %__MODULE__{
       namespace: namespace,
       human_name: human_name,
       alias: alias_atom,
+      underscore_name: underscore_name,
       options: Map.new(options)
     }
   end
