@@ -40,7 +40,9 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttp do
       positional: [:name],
       # Other tasks your task composes using `Igniter.compose_task`, passing in the CLI argv
       # This ensures your option schema includes options from nested tasks
-      composes: [],
+      composes: [
+        "sims.gen.config_module"
+      ],
       # `OptionParser` schema
       schema: [
         include_tests: :boolean
@@ -67,6 +69,7 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttp do
       )
 
     igniter
+    |> Igniter.compose_task("sims.gen.config_module")
     |> Igniter.Project.Test.ensure_test_support()
     |> Igniter.assign(:simulator, simulator)
     |> copy_simulator_template("simulator.ex.eex")
@@ -94,6 +97,65 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttp do
       else
         igniter
       end
+    end)
+    |> then(fn igniter ->
+      Igniter.Project.Module.find_and_update_module!(
+        igniter,
+        igniter.assigns.swappable_config.namespace,
+        fn zipper ->
+          with {:ok, zipper} <-
+                 Igniter.Code.Function.move_to_defp(zipper, :adapter, 0, target: :before) do
+            {:ok,
+             Igniter.Code.Common.add_code(
+               zipper,
+               EEx.eval_file(
+                 Path.join(base_template_path(), "config_module_function.eex"),
+                 assigns: [
+                   simulator: igniter.assigns.simulator
+                 ]
+               ),
+               placement: :before
+             )}
+          end
+        end
+      )
+    end)
+    |> then(fn igniter ->
+      Igniter.Project.Module.find_and_update_module!(
+        igniter,
+        igniter.assigns.swappable_config.behaviour,
+        fn zipper ->
+          {:ok,
+           Igniter.Code.Common.add_code(
+             zipper,
+             EEx.eval_file(
+               Path.join(base_template_path(), "config_behaviour_callback.eex"),
+               assigns: [
+                 simulator: igniter.assigns.simulator
+               ]
+             )
+           )}
+        end
+      )
+    end)
+    |> then(fn igniter ->
+      Igniter.Project.Module.find_and_update_module!(
+        igniter,
+        igniter.assigns.swappable_config.default_adapter,
+        fn zipper ->
+          {:ok,
+           Igniter.Code.Common.add_code(
+             zipper,
+             EEx.eval_file(
+               Path.join(base_template_path(), "config_default_adapter_function.eex"),
+               assigns: [
+                 simulator: igniter.assigns.simulator,
+                 swappable_config: igniter.assigns.swappable_config
+               ]
+             )
+           )}
+        end
+      )
     end)
   end
 

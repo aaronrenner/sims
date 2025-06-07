@@ -1,0 +1,5 @@
+@impl true
+def <%= @simulator.underscore_name %>_base_url do
+  # TODO Configure this in config/config.exs or config/runtime.exs
+  Application.fetch_env!(<%= inspect @swappable_config.app_name %>, :<%= @simulator.underscore_name %>_base_url)
+end
