@@ -2,6 +2,7 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttp do
   use Igniter.Mix.Task
 
   alias Mix.Sims.Simulator
+  alias Mix.Sims.SimulatorHelpersModule
 
   @example "mix sims.gen.basic_http MySimulator"
 
@@ -21,6 +22,8 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttp do
 
   * `--include-tests` - Generate tests for this simulator
   * `--include-response-stubs` - Generate helpers for stubbing responses like internal server errors
+  * `--no-include-app-config` - Skip generating the app config modules and SimulatorHelpers module for
+        pointing switching the app to talk to the simulator
   """
 
   @impl Igniter.Mix.Task
@@ -41,16 +44,20 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttp do
       positional: [:name],
       # Other tasks your task composes using `Igniter.compose_task`, passing in the CLI argv
       # This ensures your option schema includes options from nested tasks
-      composes: [],
+      composes: [
+        "sims.gen.config_module"
+      ],
       # `OptionParser` schema
       schema: [
         include_tests: :boolean,
-        include_response_stubs: :boolean
+        include_response_stubs: :boolean,
+        include_app_config: :boolean
       ],
       # Default values for the options in the `schema`
       defaults: [
         include_tests: false,
-        include_response_stubs: false
+        include_response_stubs: false,
+        include_app_config: true
       ],
       # CLI aliases
       aliases: [],
@@ -84,6 +91,11 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttp do
     |> Igniter.Project.Deps.add_dep({:plug, "~> 1.13", only: [:dev, :test]}, append?: true)
     |> Igniter.Project.Formatter.import_dep(:plug)
     |> then(fn igniter ->
+      if igniter.args.options[:include_app_config],
+        do: generate_app_config(igniter),
+        else: igniter
+    end)
+    |> then(fn igniter ->
       if igniter.args.options[:include_tests] do
         module = :"#{igniter.assigns.simulator.namespace}Test"
 
@@ -92,12 +104,110 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttp do
           Path.join(base_template_path(), "simulator_test.exs.eex"),
           Igniter.Project.Module.proper_location(igniter, module, :test),
           module: module,
-          simulator: igniter.assigns.simulator
+          simulator: igniter.assigns.simulator,
+          swappable_config: Map.get(igniter.assigns, :swappable_config),
+          simulator_helpers_module: Map.get(igniter.assigns, :simulator_helpers_module)
         )
         |> Igniter.Project.Deps.add_dep({:req, "~> 0.5"}, append?: true)
       else
         igniter
       end
+    end)
+  end
+
+  defp generate_app_config(igniter) do
+    igniter
+    |> Igniter.compose_task("sims.gen.config_module")
+    |> then(fn igniter ->
+      Igniter.Project.Module.find_and_update_module!(
+        igniter,
+        igniter.assigns.swappable_config.namespace,
+        fn zipper ->
+          with {:ok, zipper} <-
+                 Igniter.Code.Function.move_to_defp(zipper, :adapter, 0, target: :before) do
+            {:ok,
+             Igniter.Code.Common.add_code(
+               zipper,
+               EEx.eval_file(
+                 Path.join(base_template_path(), "config_module_function.eex"),
+                 assigns: [
+                   simulator: igniter.assigns.simulator
+                 ]
+               ),
+               placement: :before
+             )}
+          end
+        end
+      )
+    end)
+    |> then(fn igniter ->
+      Igniter.Project.Module.find_and_update_module!(
+        igniter,
+        igniter.assigns.swappable_config.behaviour,
+        fn zipper ->
+          {:ok,
+           Igniter.Code.Common.add_code(
+             zipper,
+             EEx.eval_file(
+               Path.join(base_template_path(), "config_behaviour_callback.eex"),
+               assigns: [
+                 simulator: igniter.assigns.simulator
+               ]
+             )
+           )}
+        end
+      )
+    end)
+    |> then(fn igniter ->
+      Igniter.Project.Module.find_and_update_module!(
+        igniter,
+        igniter.assigns.swappable_config.default_adapter,
+        fn zipper ->
+          {:ok,
+           Igniter.Code.Common.add_code(
+             zipper,
+             EEx.eval_file(
+               Path.join(base_template_path(), "config_default_adapter_function.eex"),
+               assigns: [
+                 simulator: igniter.assigns.simulator,
+                 swappable_config: igniter.assigns.swappable_config
+               ]
+             )
+           )}
+        end
+      )
+    end)
+    |> then(fn igniter ->
+      module = Igniter.Project.Module.module_name(igniter, "SimulatorHelpers")
+
+      igniter
+      |> Igniter.assign(:simulator_helpers_module, SimulatorHelpersModule.new(module))
+      |> Igniter.Project.Module.module_exists(module)
+      |> case do
+        {true, igniter} ->
+          igniter
+
+        {false, igniter} ->
+          Igniter.copy_template(
+            igniter,
+            Path.join(base_template_path(), "simulator_helpers_module.ex.eex"),
+            Igniter.Project.Module.proper_location(igniter, module, :test_support),
+            module: module
+          )
+      end
+      |> Igniter.Project.Module.find_and_update_module!(module, fn zipper ->
+        {:ok,
+         Igniter.Code.Common.add_code(
+           zipper,
+           EEx.eval_file(
+             Path.join(base_template_path(), "simulator_helpers_functions.eex"),
+             assigns: [
+               simulator: igniter.assigns.simulator,
+               swappable_config: igniter.assigns.swappable_config
+             ]
+           )
+         )}
+      end)
     end)
   end
 

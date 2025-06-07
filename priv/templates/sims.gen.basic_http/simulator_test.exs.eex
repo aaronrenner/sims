@@ -3,14 +3,24 @@ defmodule <%= inspect @module %> do
 
   alias <%= inspect @simulator.namespace %>
 
+<%= if @simulator_helpers_module do %>
+  setup [{<%= inspect(@simulator_helpers_module.module) %>, :configure_for_<%= @simulator.underscore_name %>_simulator}]
+
+  setup do
+    req = Req.new(base_url: <%= inspect(@swappable_config.namespace) %>.<%= @simulator.underscore_name %>_base_url(), retry: false)
+
+    [req: req]
+  end
+<% else %>
   setup do
     sim = start_supervised!(<%= inspect @simulator.alias %>)
     req = Req.new(base_url: <%= inspect @simulator.alias %>.base_url(sim), retry: false)
 
-    [sim: sim, req: req]
+    [<%= @simulator.underscore_name %>_simulator: sim, req: req]
   end
+<% end %>
 
-  test "simulator starts successfully", %{sim: sim, req: req} do
+  test "simulator starts successfully", %{<%= @simulator.underscore_name %>_simulator: sim, req: req} do
     response = Req.get!(req, url: "/hello")
 
     assert response.body =~ "It works!"
@@ -24,7 +34,7 @@ defmodule <%= inspect @module %> do
     assert response.status == 200
   end
 
-  test "allows for closing and reopening a connection", %{sim: sim, req: req} do
+  test "allows for closing and reopening a connection", %{<%= @simulator.underscore_name %>_simulator: sim, req: req} do
     <%= inspect @simulator.alias %>.down(sim)
 
     assert {:error, %Req.TransportError{reason: :econnrefused}} =
@@ -36,7 +46,7 @@ defmodule <%= inspect @module %> do
   end
 
 <%= if @simulator.options.response_stubs? do %>
-  test "triggering and clearing stubbed responses on specific endpoints", %{sim: sim, req: req} do
+  test "triggering and clearing stubbed responses on specific endpoints", %{<%= @simulator.underscore_name %>_simulator: sim, req: req} do
     <%= inspect @simulator.alias %>.trigger_internal_server_errors(sim, :greeting)
 
     response = Req.get!(req, url: "/hello")

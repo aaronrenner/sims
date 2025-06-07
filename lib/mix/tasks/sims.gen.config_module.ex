@@ -81,13 +81,19 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
        ) do
     module = Module.concat(igniter.assigns.swappable_config.namespace, child_module_name)
 
-    Igniter.copy_template(
-      igniter,
-      Path.join(base_template_path(), template_path),
-      Igniter.Project.Module.proper_location(igniter, module),
-      module: module,
-      swappable_config: igniter.assigns.swappable_config
-    )
+    case Igniter.Project.Module.module_exists(igniter, module) do
+      {true, igniter} ->
+        igniter
+
+      {false, igniter} ->
+        Igniter.copy_template(
+          igniter,
+          Path.join(base_template_path(), template_path),
+          Igniter.Project.Module.proper_location(igniter, module),
+          module: module,
+          swappable_config: igniter.assigns.swappable_config
+        )
+    end
   end
 
   defp base_template_path do
