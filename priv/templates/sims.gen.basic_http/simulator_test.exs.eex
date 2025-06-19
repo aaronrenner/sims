@@ -10,7 +10,14 @@ defmodule <%= inspect @module %> do
 
     response = Req.get!(req, url: "/hello")
 
-    assert response.body == "It works!"
+    assert response.body =~ "It works!"
+    assert response.status == 200
+
+    <%= inspect @simulator.alias %>.set_greeting(sim, "Hello world")
+
+    response = Req.get!(req, url: "/hello")
+
+    assert response.body =~ "Hello world"
     assert response.status == 200
   end
 

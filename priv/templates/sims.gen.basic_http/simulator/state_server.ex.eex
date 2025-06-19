@@ -9,7 +9,11 @@ defmodule <%= inspect @module %> do
     Agent.start_link(fn -> State.new() end)
   end
 
-  def get_state(server) do
-    Agent.get(server, & &1)
+  def set_greeting(server, greeting) do
+    Agent.update(server, &State.set_greeting(&1, greeting))
+  end
+
+  def get_greeting(server) do
+    Agent.get(server, &State.get_greeting(&1))
   end
 end

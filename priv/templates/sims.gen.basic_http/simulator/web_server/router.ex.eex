@@ -3,6 +3,7 @@ defmodule <%= inspect @module %> do
 
   use Plug.Router
 
+  alias <%= inspect @simulator.namespace %>.StateServer
   alias <%= inspect @simulator.namespace %>.WebServer.Responses
 
   plug :match
@@ -24,6 +25,8 @@ defmodule <%= inspect @module %> do
   end
 
   get "/hello" do
-    Responses.hello_success(conn)
+    greeting = StateServer.get_greeting(conn.assigns.state_server)
+
+    send_resp(conn, 200, Responses.render_greeting(greeting))
   end
 end

@@ -41,6 +41,16 @@ defmodule <%= inspect @module %> do
   end
 
   @doc """
+  Set the greeting returned by /hello
+  """
+  @spec set_greeting(t, String.t()) :: :ok
+  def set_greeting(sim, greeting) do
+    sim
+    |> lookup_child_process!(StateServer)
+    |> StateServer.set_greeting(greeting)
+  end
+
+  @doc """
   Close the simulator's TCP socket.
   """
   @spec down(t) :: :ok

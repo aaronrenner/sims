@@ -5,6 +5,16 @@ defmodule <%= inspect @module %> do
 
   @spec new() :: t
   def new do
-    %{}
+    %{greeting: "It works!"}
+  end
+
+  @spec get_greeting(t) :: String.t()
+  def get_greeting(state) do
+    state.greeting
+  end
+
+  @spec set_greeting(t, String.t()) :: t
+  def set_greeting(state, greeting) do
+    %{state | greeting: greeting}
   end
 end
