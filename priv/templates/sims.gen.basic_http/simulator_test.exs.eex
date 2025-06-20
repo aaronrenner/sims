@@ -36,6 +36,30 @@ defmodule <%= inspect @module %> do
     assert Req.get!(req, url: "/hello").status == 200
   end
 
+  test "triggering and clearing stubbed responses on specific endpoints" do
+    sim = start_supervised!(<%= inspect @simulator.alias %>)
+
+    <%= inspect @simulator.alias %>.trigger_internal_server_errors(sim, :greeting)
+
+    req = build_req(sim)
+
+    response = Req.get!(req, url: "/hello")
+    assert response.status == 500
+    assert response.body =~ "Internal Server Error"
+
+    <%= inspect @simulator.alias %>.clear_stubbed_responses(sim, :greeting)
+
+    response = Req.get!(req, url: "/hello")
+    assert response.status == 200
+    assert response.body =~ "It works!"
+
+    <%= inspect @simulator.alias %>.trigger_internal_server_errors(sim, :all)
+
+    response = Req.get!(req, url: "/hello")
+    assert response.status == 500
+    assert response.body =~ "Internal Server Error"
+  end
+
   defp build_req(sim) do
     Req.new(base_url: <%= inspect @simulator.alias %>.base_url(sim), retry: false)
   end

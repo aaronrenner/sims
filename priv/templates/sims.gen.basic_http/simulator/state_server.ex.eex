@@ -16,4 +16,16 @@ defmodule <%= inspect @module %> do
   def get_greeting(server) do
     Agent.get(server, &State.get_greeting(&1))
   end
+
+  def get_response_stub(server, route_id) do
+    Agent.get(server, &State.get_response_stub(&1, route_id))
+  end
+
+  def stub_response(server, route_id, response_id) do
+    Agent.update(server, &State.stub_response(&1, route_id, response_id))
+  end
+
+  def clear_stubbed_responses(server, route_id) do
+    Agent.update(server, &State.clear_stubbed_responses(&1, route_id))
+  end
 end

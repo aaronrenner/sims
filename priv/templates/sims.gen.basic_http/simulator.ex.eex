@@ -8,7 +8,7 @@ defmodule <%= inspect @module %> do
   alias <%= inspect @simulator.namespace %>.WebServer
 
   @type t :: pid
-  @type route_id :: atom
+  @type route_id :: :all | :hello
 
   @doc false
   def child_spec(init_arg) do
@@ -50,6 +50,7 @@ defmodule <%= inspect @module %> do
     |> StateServer.set_greeting(greeting)
   end
 
+
   @doc """
   Close the simulator's TCP socket.
   """
@@ -90,6 +91,26 @@ defmodule <%= inspect @module %> do
       |> PortCache.get()
 
     "http://localhost:#{port}"
+  end
+
+  @doc """
+  Causes the server to return internal server errors
+  """
+  @spec trigger_internal_server_errors(t, route_id) :: :ok
+  def trigger_internal_server_errors(sim, route_id \\ :all) do
+    sim
+    |> lookup_child_process!(StateServer)
+    |> StateServer.stub_response(route_id, :internal_server_error)
+  end
+
+  @doc """
+  Removes stubbed responses from the server
+  """
+  @spec clear_stubbed_responses(t, route_id) :: :ok
+  def clear_stubbed_responses(sim, route_id \\ :all) do
+    sim
+    |> lookup_child_process!(StateServer)
+    |> StateServer.clear_stubbed_responses(route_id)
   end
 
   defp lookup_child_process!(sup, id) do

@@ -5,7 +5,10 @@ defmodule <%= inspect @module %> do
 
   @spec new() :: t
   def new do
-    %{greeting: "It works!"}
+    %{
+      greeting: "It works!",
+      response_stubs: %{}
+    }
   end
 
   @spec get_greeting(t) :: String.t()
@@ -16,5 +19,25 @@ defmodule <%= inspect @module %> do
   @spec set_greeting(t, String.t()) :: t
   def set_greeting(state, greeting) do
     %{state | greeting: greeting}
+  end
+
+  def get_response_stub(state, route_id) do
+    with nil <- state.response_stubs[:all] do
+      state.response_stubs[route_id]
+    end
+  end
+
+  def stub_response(state, route_id, response_id) do
+    response_stubs = Map.put(state.response_stubs, route_id, response_id)
+
+    %{state | response_stubs: response_stubs}
+  end
+
+  def clear_stubbed_responses(state, :all) do
+    %{state | response_stubs: %{}}
+  end
+
+  def clear_stubbed_responses(state, route_id) do
+    Map.update!(state, :response_stubs, &Map.delete(&1, route_id))
   end
 end
