@@ -1,13 +1,13 @@
 defmodule Mix.Sims.Simulator do
   @moduledoc false
 
-  defstruct namespace: nil, alias: nil, human_name: nil
+  defstruct namespace: nil, alias: nil, human_name: nil, options: %{}
 
   def valid?(simulator_name) do
     simulator_name =~ ~r/^[A-Z]\w*(\.[A-Z]\w*)*$/
   end
 
-  def new(project_module_name_prefix, simulator_name) do
+  def new(project_module_name_prefix, simulator_name, options \\ []) when is_list(options) do
     namespace = Module.concat(project_module_name_prefix, "#{simulator_name}Simulator")
     alias_atom = namespace |> Module.split() |> List.last() |> Module.concat(nil)
 
@@ -21,7 +21,8 @@ defmodule Mix.Sims.Simulator do
     %__MODULE__{
       namespace: namespace,
       human_name: human_name,
-      alias: alias_atom
+      alias: alias_atom,
+      options: Map.new(options)
     }
   end
 

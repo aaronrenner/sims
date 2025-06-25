@@ -13,8 +13,9 @@ defmodule <%= inspect @module %> do
     parsers: [:json],
     pass: ["*/*"],
     json_decoder: Jason
-
+<%= if @simulator.options.response_stubs? do %>
   plug :return_stubbed_responses
+<% end %>
 
   plug :dispatch
 
@@ -26,12 +27,12 @@ defmodule <%= inspect @module %> do
     |> super(opts)
   end
 
-  get "/hello", assigns: %{endpoint_id: :greeting} do
+  get "/hello"<%= if @simulator.options.response_stubs? do %>, assigns: %{endpoint_id: :greeting}<% end %> do
     greeting = StateServer.get_greeting(conn.assigns.state_server)
 
     send_resp(conn, 200, Responses.render_greeting(greeting))
   end
-
+<%= if @simulator.options.response_stubs? do %>
   defp return_stubbed_responses(conn, _opts) do
     endpoint_id = fetch_endpoint_id_from_assigns!(conn)
 
@@ -69,4 +70,5 @@ defmodule <%= inspect @module %> do
         """
     end
   end
+<% end %>
 end

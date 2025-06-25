@@ -36,6 +36,7 @@ defmodule <%= inspect @module %> do
     assert Req.get!(req, url: "/hello").status == 200
   end
 
+<%= if @simulator.options.response_stubs? do %>
   test "triggering and clearing stubbed responses on specific endpoints" do
     sim = start_supervised!(<%= inspect @simulator.alias %>)
 
@@ -59,6 +60,7 @@ defmodule <%= inspect @module %> do
     assert response.status == 500
     assert response.body =~ "Internal Server Error"
   end
+<% end %>
 
   defp build_req(sim) do
     Req.new(base_url: <%= inspect @simulator.alias %>.base_url(sim), retry: false)

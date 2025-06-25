@@ -16,7 +16,7 @@ defmodule <%= inspect @module %> do
   def get_greeting(server) do
     Agent.get(server, &State.get_greeting(&1))
   end
-
+<%= if @simulator.options.response_stubs? do %>
   def get_response_stub(server, route_id) do
     Agent.get(server, &State.get_response_stub(&1, route_id))
   end
@@ -28,4 +28,5 @@ defmodule <%= inspect @module %> do
   def clear_stubbed_responses(server, route_id) do
     Agent.update(server, &State.clear_stubbed_responses(&1, route_id))
   end
+<% end %>
 end

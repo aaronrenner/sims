@@ -6,8 +6,8 @@ defmodule <%= inspect @module %> do
   @spec new() :: t
   def new do
     %{
-      greeting: "It works!",
-      response_stubs: %{}
+      greeting: "It works!"<%= if @simulator.options.response_stubs? do %>,
+      response_stubs: %{}<% end %>
     }
   end
 
@@ -21,6 +21,7 @@ defmodule <%= inspect @module %> do
     %{state | greeting: greeting}
   end
 
+<%= if @simulator.options.response_stubs? do %>
   def get_response_stub(state, route_id) do
     with nil <- state.response_stubs[:all] do
       state.response_stubs[route_id]
@@ -40,4 +41,5 @@ defmodule <%= inspect @module %> do
   def clear_stubbed_responses(state, route_id) do
     Map.update!(state, :response_stubs, &Map.delete(&1, route_id))
   end
+<% end %>
 end

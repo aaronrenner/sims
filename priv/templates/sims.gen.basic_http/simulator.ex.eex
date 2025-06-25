@@ -8,7 +8,8 @@ defmodule <%= inspect @module %> do
   alias <%= inspect @simulator.namespace %>.WebServer
 
   @type t :: pid
-  @type route_id :: :all | :hello
+<%= if @simulator.options.response_stubs? do %>  @type route_id :: :all | :hello
+<% end %>
 
   @doc false
   def child_spec(init_arg) do
@@ -92,7 +93,7 @@ defmodule <%= inspect @module %> do
 
     "http://localhost:#{port}"
   end
-
+<%= if @simulator.options.response_stubs? do %>
   @doc """
   Causes the server to return internal server errors
   """
@@ -112,6 +113,7 @@ defmodule <%= inspect @module %> do
     |> lookup_child_process!(StateServer)
     |> StateServer.clear_stubbed_responses(route_id)
   end
+<% end %>
 
   defp lookup_child_process!(sup, id) do
     {^id, pid, _, _} =
