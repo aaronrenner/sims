@@ -1,4 +1,5 @@
 {
-  "image": "hexpm/elixir:1.18.4-erlang-28.0.1-ubuntu-noble-20250619",
-  "postCreateCommand": "apt-get update && apt-get install -y build-essential git inotify-tools vim"
+  "build": {
+    "dockerfile": "Dockerfile"
+  }
 }
