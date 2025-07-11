@@ -17,6 +17,14 @@ defmodule Sims.Integration.BasicHttpTest do
     assert "test/sample_app/blog_simulator_test.exs" in paths
     assert "test/support/payment_gateway_simulator.ex" in paths
     assert "test/sample_app/payment_gateway_simulator_test.exs" in paths
+
+    assert app_path
+           |> Path.join("test/test_helper.exs")
+           |> File.read!() == """
+           ExUnit.start()
+           Mox.defmock(SampleApp.Config.MockAdapter, for: SampleApp.Config.Adapter)
+           Application.put_env(:sample_app, :config_adapter, SampleApp.Config.MockAdapter)
+           """
   end
 
   @tag :tmp_dir

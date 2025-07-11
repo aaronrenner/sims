@@ -64,13 +64,25 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
     |> copy_template("config/adapter.ex.eex", Adapter)
     |> copy_template("config/default_adapter.ex.eex", DefaultAdapter)
     |> Igniter.update_elixir_file("test/test_helper.exs", fn zipper ->
-      Igniter.Code.Common.add_code(
-        zipper,
-        EEx.eval_file(
-          Path.join(base_template_path(), "test_helper.exs.eex"),
-          assigns: [swappable_config: swappable_config]
-        )
-      )
+      case Igniter.Code.Function.move_to_function_call_in_current_scope(
+             zipper,
+             {Mox, :defmock},
+             2,
+             &Igniter.Code.Function.argument_equals?(&1, 0, swappable_config.test_adapter)
+           ) do
+        {:ok, _} ->
+          {:ok, zipper}
+
+        _ ->
+          {:ok,
+           Igniter.Code.Common.add_code(
+             zipper,
+             EEx.eval_file(
+               Path.join(base_template_path(), "test_helper.exs.eex"),
+               assigns: [swappable_config: swappable_config]
+             )
+           )}
+      end
     end)
   end
 
