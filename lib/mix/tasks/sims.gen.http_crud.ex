@@ -21,6 +21,7 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
   ## Options
 
   * `--include-tests` - Generate tests for this simulator
+  * `--include-response-stubs` - Generate helpers for stubbing responses like internal server errors
   """
 
   @impl Igniter.Mix.Task
@@ -44,11 +45,13 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
       composes: [],
       # `OptionParser` schema
       schema: [
-        include_tests: :boolean
+        include_tests: :boolean,
+        include_response_stubs: :boolean
       ],
       # Default values for the options in the `schema`
       defaults: [
-        include_tests: false
+        include_tests: false,
+        include_response_stubs: false
       ],
       # CLI aliases
       aliases: [],
@@ -64,7 +67,8 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
     simulator =
       Simulator.new(
         Igniter.Project.Module.module_name_prefix(igniter),
-        igniter.args.positional.name
+        igniter.args.positional.name,
+        build_options(igniter.args)
       )
 
     model =
@@ -139,6 +143,12 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
       Expected the simulator, #{inspect(model_name)}, to be a valid module name
       """)
     end
+  end
+
+  defp build_options(%{positional: _positional, options: options}) do
+    [
+      response_stubs?: Keyword.fetch!(options, :include_response_stubs)
+    ]
   end
 
   defp base_template_path do

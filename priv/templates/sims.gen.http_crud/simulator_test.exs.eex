@@ -111,6 +111,7 @@ defmodule <%= inspect @module %> do
     end
   end
 
+<%= if @simulator.options.response_stubs? do %>
   describe "triggering errors" do
     test "globally" do
       sim = start_supervised!(<%= inspect @simulator.alias %>)
@@ -148,6 +149,7 @@ defmodule <%= inspect @module %> do
       assert %{status: 200, body: "Invalid"} = Req.get!(req, url: "/<%= @model.plural %>")
     end
   end
+<% end %>
 
   defp build_req(sim) do
     Req.new(base_url: <%= inspect @simulator.alias %>.base_url(sim), retry: false)

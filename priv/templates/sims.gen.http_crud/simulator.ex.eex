@@ -8,6 +8,7 @@ defmodule <%= inspect @module %> do
 
   @type t :: pid
 
+<%= if @simulator.options.response_stubs? do %>
   @type route_id ::
           :all
           | :list_<%= @model.plural %>
@@ -16,6 +17,7 @@ defmodule <%= inspect @module %> do
           | :update_<%= @model.name %>
           | :delete_<%= @model.name %>
           | :status
+<% end %>
 
   @type account_id :: String.t()
   @type <%= @model.name %>_id :: String.t()
@@ -102,6 +104,7 @@ defmodule <%= inspect @module %> do
     |> StateServer.create_<%= @model.name %>(account_id, fields)
   end
 
+<%= if @simulator.options.response_stubs? do %>
   @doc """
   Causes the server to return internal server errors
   """
@@ -131,6 +134,7 @@ defmodule <%= inspect @module %> do
     |> lookup_child_process!(StateServer)
     |> StateServer.clear_stubbed_responses()
   end
+<% end %>
 
   @doc """
   Gets the base_url for this instance.

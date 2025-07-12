@@ -28,6 +28,24 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrudTest do
 
     assert diff =~ "MyApp.Simulators.BlogSimulator"
     assert diff =~ "A Blog simulator"
+
+    # Does not generate response stubs
+    refute diff =~ "def trigger_internal_server_errors"
+    refute diff =~ "response_stubs"
+  end
+
+  test "includes response stubs with --include-response-stubs" do
+    igniter =
+      test_project(app_name: :my_app)
+      |> Igniter.compose_task(
+        "sims.gen.http_crud",
+        ~w(AddressBook contact contacts --include-response-stubs)
+      )
+      |> assert_creates("test/support/address_book_simulator.ex")
+
+    diff = diff(igniter)
+
+    assert diff =~ "def trigger_internal_server_errors"
   end
 
   test "errors when passing a simulator name with invalid characters" do
