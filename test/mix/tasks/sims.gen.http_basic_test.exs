@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Sims.Gen.BasicHttpTest do
+defmodule Mix.Tasks.Sims.Gen.HttpBasicTest do
   use ExUnit.Case, async: true
 
   import Igniter.Test
@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttpTest do
   test "generates a simulator" do
     igniter =
       test_project(app_name: :my_app)
-      |> Igniter.compose_task("sims.gen.basic_http", ~w(PaymentGateway))
+      |> Igniter.compose_task("sims.gen.http_basic", ~w(PaymentGateway))
       |> assert_creates("test/support/payment_gateway_simulator.ex")
       |> assert_creates("test/support/simulator_helpers.ex")
       |> assert_creates("lib/my_app/config.ex", """
@@ -86,7 +86,7 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttpTest do
     igniter =
       test_project(app_name: :my_app)
       |> Igniter.compose_task(
-        "sims.gen.basic_http",
+        "sims.gen.http_basic",
         ~w(Simulators.PaymentGateway --include-tests)
       )
       |> assert_creates("test/support/simulators/payment_gateway_simulator.ex")
@@ -102,7 +102,7 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttpTest do
     igniter =
       test_project(app_name: :my_app)
       |> Igniter.compose_task(
-        "sims.gen.basic_http",
+        "sims.gen.http_basic",
         ~w(Simulators.PaymentGateway)
       )
       |> refute_creates("test/my_app/simulators/payment_gateway_test.exs")
@@ -117,7 +117,7 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttpTest do
     igniter =
       test_project(app_name: :my_app)
       |> Igniter.compose_task(
-        "sims.gen.basic_http",
+        "sims.gen.http_basic",
         ~w(Simulators.PaymentGateway --include-tests --include-response-stubs)
       )
 
@@ -128,7 +128,7 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttpTest do
 
   test "does not generate config with --no-include-app-config" do
     test_project(app_name: :my_app)
-    |> Igniter.compose_task("sims.gen.basic_http", ~w(PaymentGateway --no-include-app-config))
+    |> Igniter.compose_task("sims.gen.http_basic", ~w(PaymentGateway --no-include-app-config))
     |> refute_creates("lib/my_app/config.ex")
     |> refute_creates("lib/my_app/config/adapter.ex")
     |> refute_creates("lib/my_app/config/default_adapter.ex")
@@ -137,7 +137,7 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttpTest do
   test "errors when passing a simulator name with invalid characters" do
     assert_raise Mix.Error, ~r/to be a valid module name/, fn ->
       test_project()
-      |> Igniter.compose_task("sims.gen.basic_http", ["Foo Bar"])
+      |> Igniter.compose_task("sims.gen.http_basic", ["Foo Bar"])
     end
   end
 end

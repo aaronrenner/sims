@@ -1,10 +1,10 @@
-defmodule Mix.Tasks.Sims.Gen.BasicHttp do
+defmodule Mix.Tasks.Sims.Gen.HttpBasic do
   use Igniter.Mix.Task
 
   alias Mix.Sims.Simulator
   alias Mix.Sims.SimulatorHelpersModule
 
-  @example "mix sims.gen.basic_http MySimulator"
+  @example "mix sims.gen.http_basic MySimulator"
 
   @shortdoc "Generates a basic HTTP simulator"
   @moduledoc """
@@ -238,7 +238,7 @@ defmodule Mix.Tasks.Sims.Gen.BasicHttp do
   end
 
   defp base_template_path do
-    Application.app_dir(:sims, "priv/templates/sims.gen.basic_http")
+    Application.app_dir(:sims, "priv/templates/sims.gen.http_basic")
   end
 
   defp build_options(%{positional: _positional, options: options}) do
