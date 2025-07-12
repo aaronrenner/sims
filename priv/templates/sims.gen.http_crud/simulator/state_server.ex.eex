@@ -65,6 +65,7 @@ defmodule <%= inspect @module %> do
     end)
   end
 
+<%= if @simulator.options.response_stubs? do %>
   def get_response_stub(server, route_id) do
     server
     |> get_state()
@@ -78,4 +79,5 @@ defmodule <%= inspect @module %> do
   def clear_stubbed_responses(server) do
     Agent.update(server, &State.clear_stubbed_responses(&1))
   end
+<% end %>
 end

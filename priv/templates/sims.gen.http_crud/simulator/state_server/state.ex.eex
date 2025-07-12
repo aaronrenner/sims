@@ -7,8 +7,8 @@ defmodule <%= inspect @module %> do
   def new do
     %{
       accounts: [],
-      <%= @model.plural %>: %{},
-      response_stubs: %{}
+      <%= @model.plural %>: %{}<%= if @simulator.options.response_stubs? do %>,
+      response_stubs: %{}<% end %>
     }
   end
 
@@ -105,6 +105,7 @@ defmodule <%= inspect @module %> do
     end
   end
 
+<%= if @simulator.options.response_stubs? do %>
   def get_response_stub(state, route_id) do
     with nil <- state.response_stubs[:all] do
       state.response_stubs[route_id]
@@ -120,6 +121,7 @@ defmodule <%= inspect @module %> do
   def clear_stubbed_responses(state) do
     %{state | response_stubs: %{}}
   end
+<% end %>
 
   defp random_id, do: :crypto.strong_rand_bytes(10) |> Base.url_encode64(padding: false)
 end

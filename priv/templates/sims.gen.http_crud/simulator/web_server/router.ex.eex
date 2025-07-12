@@ -14,7 +14,9 @@ defmodule <%= inspect @module %> do
     pass: ["*/*"],
     json_decoder: Jason
 
+<%= if @simulator.options.response_stubs? do %>
   plug :return_stubbed_responses
+<% end %>
   plug :assign_account_id_from_basic_auth
   plug :require_authentication
 
@@ -126,6 +128,7 @@ defmodule <%= inspect @module %> do
     |> Plug.Conn.halt()
   end
 
+<%= if @simulator.options.response_stubs? do %>
   defp return_stubbed_responses(conn, _opts) do
     endpoint_id = fetch_endpoint_id_from_assigns!(conn)
 
@@ -163,6 +166,7 @@ defmodule <%= inspect @module %> do
         """
     end
   end
+<% end %>
 
   defp send_json_resp(conn, 404) do
     send_json_resp(conn, 404, Responses.render_not_found())

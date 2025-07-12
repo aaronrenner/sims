@@ -102,6 +102,7 @@ defmodule <%= inspect @module %> do
     |> StateServer.create_<%= @model.name %>(account_id, fields)
   end
 
+<%= if @simulator.options.response_stubs? do %>
   @doc """
   Causes the server to return internal server errors
   """
@@ -131,6 +132,7 @@ defmodule <%= inspect @module %> do
     |> lookup_child_process!(StateServer)
     |> StateServer.clear_stubbed_responses()
   end
+<% end %>
 
   @doc """
   Gets the base_url for this instance.
