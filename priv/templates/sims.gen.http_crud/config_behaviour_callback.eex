@@ -1,0 +1,1 @@
+@callback <%= @simulator.underscore_name %>_base_url() :: String.t()

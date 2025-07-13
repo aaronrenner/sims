@@ -3,21 +3,30 @@ defmodule <%= inspect @module %> do
 
   alias <%= inspect @simulator.namespace %>
 
+<%= if @simulator_helpers_module do %>
+  setup [{<%= inspect(@simulator_helpers_module.module) %>, :configure_for_<%= @simulator.underscore_name %>_simulator}]
+
+  setup do
+    req = Req.new(base_url: <%= inspect(@swappable_config.namespace) %>.<%= @simulator.underscore_name %>_base_url(), retry: false)
+    [req: req]
+  end
+<% else %>
   setup do
     sim = start_supervised!(<%= inspect @simulator.alias %>)
     req = build_req(sim)
 
-    [simulator: sim, req: req]
+    [<%= @simulator.underscore_name %>_simulator: sim, req: req]
   end
+<% end %>
 
-  test "simulator starts successfully", %{req: req} do
+  test "simulator starts successfully", %{<%= @simulator.underscore_name %>_simulator: sim, req: req} do
     response = Req.get!(req, url: "/status")
 
     assert response.body == "Up!"
     assert response.status == 200
   end
 
-  test "allows for closing and reopening a connection", %{simulator: sim, req: req} do
+  test "allows for closing and reopening a connection", %{<%= @simulator.underscore_name %>_simulator: sim, req: req} do
     <%= inspect @simulator.alias %>.down(sim)
 
     assert {:error, %Req.TransportError{reason: :econnrefused}} =
@@ -28,7 +37,7 @@ defmodule <%= inspect @module %> do
     assert Req.get!(req, url: "/status").status == 200
   end
 
-  test "requires an API token", %{simulator: sim, req: req} do
+  test "requires an API token", %{<%= @simulator.underscore_name %>_simulator: sim, req: req} do
     {:ok, account} = <%= inspect @simulator.alias %>.create_account(sim)
     assert Req.get!(req, url: "/<%= @model.plural %>").status == 401
 
@@ -39,7 +48,7 @@ defmodule <%= inspect @module %> do
   end
 
   describe "simulator business logic" do
-    test "<%= @model.name %> crud", %{simulator: sim, req: req} do
+    test "<%= @model.name %> crud", %{<%= @simulator.underscore_name %>_simulator: sim, req: req} do
       {:ok, account} = <%= inspect @simulator.alias %>.create_account(sim)
       req = attach_account_auth(req, account)
 
@@ -57,8 +66,7 @@ defmodule <%= inspect @module %> do
 
       assert %{status: 200, body: body} = Req.get!(req, url: "/<%= @model.plural %>")
 
-      assert %{"<%= @model.plural %>" => [%{"id" => ^id, "first_name" => "Joe", "last_name" => "Smith"}]} =
-               body
+      assert %{"<%= @model.plural %>" => [%{"id" => ^id, "first_name" => "Joe", "last_name" => "Smith"}]} = body
 
       assert %{status: 200, body: body} =
                Req.patch!(req, url: "/<%= @model.plural %>/#{id}", json: %{"first_name" => "Jim"})
@@ -77,7 +85,7 @@ defmodule <%= inspect @module %> do
       assert %{status: 200, body: %{"<%= @model.plural %>" => []}} = Req.get!(req, url: "/<%= @model.plural %>")
     end
 
-    test "<%= @model.plural %> are returned in the order they are inserted", %{simulator: sim, req: req} do
+    test "<%= @model.plural %> are returned in the order they are inserted", %{<%= @simulator.underscore_name %>_simulator: sim, req: req} do
       {:ok, account} = <%= inspect @simulator.alias %>.create_account(sim)
       req = attach_account_auth(req, account)
 
@@ -91,7 +99,7 @@ defmodule <%= inspect @module %> do
                ["<%= @model.name %> 1", "<%= @model.name %> 2", "<%= @model.name %> 3"]
     end
 
-    test "<%= @model.plural %> are separated by account", %{simulator: sim, req: req} do
+    test "<%= @model.plural %> are separated by account", %{<%= @simulator.underscore_name %>_simulator: sim, req: req} do
       {:ok, account_1} = <%= inspect @simulator.alias %>.create_account(sim)
       {:ok, account_2} = <%= inspect @simulator.alias %>.create_account(sim)
 
@@ -109,7 +117,7 @@ defmodule <%= inspect @module %> do
 
 <%= if @simulator.options.response_stubs? do %>
   describe "triggering errors" do
-    test "globally", %{simulator: sim, req: req} do
+    test "globally", %{<%= @simulator.underscore_name %>_simulator: sim, req: req} do
       <%= inspect @simulator.alias %>.trigger_internal_server_errors(sim, :all)
 
       assert Req.get!(req, url: "/<%= @model.plural %>").status == 500
@@ -122,7 +130,7 @@ defmodule <%= inspect @module %> do
       assert Req.get!(req, url: "/<%= @model.plural %>").status == 401
     end
 
-    test "per endpoint", %{simulator: sim, req: req} do
+    test "per endpoint", %{<%= @simulator.underscore_name %>_simulator: sim, req: req} do
       {:ok, account} = <%= inspect @simulator.alias %>.create_account(sim)
       req = attach_account_auth(req, account)
 
