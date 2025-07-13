@@ -3,20 +3,21 @@ defmodule <%= inspect @module %> do
 
   alias <%= inspect @simulator.namespace %>
 
-  test "simulator starts successfully" do
+  setup do
     sim = start_supervised!(<%= inspect @simulator.alias %>)
     req = build_req(sim)
 
+    [simulator: sim, req: req]
+  end
+
+  test "simulator starts successfully", %{req: req} do
     response = Req.get!(req, url: "/status")
 
     assert response.body == "Up!"
     assert response.status == 200
   end
 
-  test "allows for closing and reopening a connection" do
-    sim = start_supervised!(<%= inspect @simulator.alias %>)
-    req = build_req(sim)
-
+  test "allows for closing and reopening a connection", %{simulator: sim, req: req} do
     <%= inspect @simulator.alias %>.down(sim)
 
     assert {:error, %Req.TransportError{reason: :econnrefused}} =
@@ -27,11 +28,8 @@ defmodule <%= inspect @module %> do
     assert Req.get!(req, url: "/status").status == 200
   end
 
-  test "requires an API token" do
-    sim = start_supervised!(<%= inspect @simulator.alias %>)
+  test "requires an API token", %{simulator: sim, req: req} do
     {:ok, account} = <%= inspect @simulator.alias %>.create_account(sim)
-    req = build_req(sim)
-
     assert Req.get!(req, url: "/<%= @model.plural %>").status == 401
 
     resp = req |> attach_account_auth(account) |> Req.get!(url: "/<%= @model.plural %>")
@@ -41,10 +39,9 @@ defmodule <%= inspect @module %> do
   end
 
   describe "simulator business logic" do
-    test "<%= @model.name %> crud" do
-      sim = start_supervised!(<%= inspect @simulator.alias %>)
+    test "<%= @model.name %> crud", %{simulator: sim, req: req} do
       {:ok, account} = <%= inspect @simulator.alias %>.create_account(sim)
-      req = sim |> build_req() |> attach_account_auth(account)
+      req = attach_account_auth(req, account)
 
       assert resp =
                Req.post!(req,
@@ -80,10 +77,9 @@ defmodule <%= inspect @module %> do
       assert %{status: 200, body: %{"<%= @model.plural %>" => []}} = Req.get!(req, url: "/<%= @model.plural %>")
     end
 
-    test "<%= @model.plural %> are returned in the order they are inserted" do
-      sim = start_supervised!(<%= inspect @simulator.alias %>)
+    test "<%= @model.plural %> are returned in the order they are inserted", %{simulator: sim, req: req} do
       {:ok, account} = <%= inspect @simulator.alias %>.create_account(sim)
-      req = sim |> build_req() |> attach_account_auth(account)
+      req = attach_account_auth(req, account)
 
       <%= inspect @simulator.alias %>.create_<%= @model.name %>(sim, account.id, first_name: "<%= @model.name %> 1")
       <%= inspect @simulator.alias %>.create_<%= @model.name %>(sim, account.id, first_name: "<%= @model.name %> 2")
@@ -95,28 +91,25 @@ defmodule <%= inspect @module %> do
                ["<%= @model.name %> 1", "<%= @model.name %> 2", "<%= @model.name %> 3"]
     end
 
-    test "<%= @model.plural %> are separated by account" do
-      sim = start_supervised!(<%= inspect @simulator.alias %>)
+    test "<%= @model.plural %> are separated by account", %{simulator: sim, req: req} do
       {:ok, account_1} = <%= inspect @simulator.alias %>.create_account(sim)
-      <%= inspect @simulator.alias %>.create_<%= @model.name %>(sim, account_1.id, first_name: "<%= @model.name %>")
-      account_1_req = sim |> build_req() |> attach_account_auth(account_1)
-
       {:ok, account_2} = <%= inspect @simulator.alias %>.create_account(sim)
-      account_2_req = sim |> build_req() |> attach_account_auth(account_2)
 
-      assert %{status: 200, body: %{"<%= @model.plural %>" => [_]}} =
-               Req.get!(account_1_req, url: "/<%= @model.plural %>")
+      req_1 = attach_account_auth(req, account_1)
+      req_2 = attach_account_auth(req, account_2)
 
-      assert %{status: 200, body: %{"<%= @model.plural %>" => []}} = Req.get!(account_2_req, url: "/<%= @model.plural %>")
+      <%= inspect @simulator.alias %>.create_<%= @model.name %>(sim, account_1.id, first_name: "account 1")
+
+      assert %{status: 200, body: %{"<%= @model.plural %>" => [%{"first_name" => "account 1"}]}} =
+               Req.get!(req_1, url: "/<%= @model.plural %>")
+
+      assert %{status: 200, body: %{"<%= @model.plural %>" => []}} = Req.get!(req_2, url: "/<%= @model.plural %>")
     end
   end
 
 <%= if @simulator.options.response_stubs? do %>
   describe "triggering errors" do
-    test "globally" do
-      sim = start_supervised!(<%= inspect @simulator.alias %>)
-      req = build_req(sim)
-
+    test "globally", %{simulator: sim, req: req} do
       <%= inspect @simulator.alias %>.trigger_internal_server_errors(sim, :all)
 
       assert Req.get!(req, url: "/<%= @model.plural %>").status == 500
@@ -129,10 +122,9 @@ defmodule <%= inspect @module %> do
       assert Req.get!(req, url: "/<%= @model.plural %>").status == 401
     end
 
-    test "per endpoint" do
-      sim = start_supervised!(<%= inspect @simulator.alias %>)
+    test "per endpoint", %{simulator: sim, req: req} do
       {:ok, account} = <%= inspect @simulator.alias %>.create_account(sim)
-      req = sim |> build_req() |> attach_account_auth(account)
+      req = attach_account_auth(req, account)
 
       <%= inspect @simulator.alias %>.trigger_internal_server_errors(sim, :create_<%= @model.name %>)
 
