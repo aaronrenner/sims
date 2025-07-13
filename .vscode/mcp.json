@@ -1,0 +1,12 @@
+{
+	"servers": {
+		"tidewave sims": {
+			"type": "stdio",
+			"command": "mcp-proxy",
+			"args": [
+				"http://localhost:4000/tidewave/mcp"
+			]
+		}
+	},
+	"inputs": []
+}

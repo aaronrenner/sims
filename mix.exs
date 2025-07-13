@@ -8,7 +8,8 @@ defmodule Sims.MixProject do
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      dialyzer: dialyzer(System.get_env())
+      dialyzer: dialyzer(System.get_env()),
+      aliases: aliases()
     ]
   end
 
@@ -23,6 +24,8 @@ defmodule Sims.MixProject do
   defp deps do
     [
       {:igniter, "~> 0.5"},
+      {:tidewave, "~> 0.2", only: :dev},
+      {:bandit, "~> 1.0", only: :dev},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
@@ -39,4 +42,11 @@ defmodule Sims.MixProject do
   end
 
   defp dialyzer(_), do: []
+
+  defp aliases do
+    [
+      tidewave:
+        "run --no-halt -e 'Agent.start(fn -> Bandit.start_link(plug: Tidewave, port: 4000) end)'"
+    ]
+  end
 end
