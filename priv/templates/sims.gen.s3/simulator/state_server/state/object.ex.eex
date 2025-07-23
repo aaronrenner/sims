@@ -1,0 +1,21 @@
+defmodule <%= inspect @module %> do
+  @moduledoc false
+
+  @type t :: %__MODULE__{
+          data: String.t(),
+          content_length: non_neg_integer(),
+          content_type: String.t() | nil
+        }
+
+  defstruct [:data, :content_length, :content_type]
+
+  def new(data, opts \\ []) do
+    opts = Keyword.validate!(opts, content_type: nil)
+
+    %__MODULE__{
+      data: data,
+      content_length: byte_size(data),
+      content_type: opts[:content_type]
+    }
+  end
+end

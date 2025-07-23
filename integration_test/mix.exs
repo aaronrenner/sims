@@ -30,6 +30,10 @@ defmodule Sims.Integration.MixProject do
       {:bandit, "~> 1.0"},
       {:plug, "~> 1.13"},
       {:req, "~> 0.5.6"},
+      {:ex_aws, "~> 2.0"},
+      {:ex_aws_s3, "~> 2.0"},
+      {:hackney, "~> 1.9"},
+      {:sweet_xml, "~> 0.6"},
       {:mox, "~> 1.0"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]

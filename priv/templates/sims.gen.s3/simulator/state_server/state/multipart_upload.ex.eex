@@ -1,0 +1,26 @@
+defmodule <%= inspect @module %> do
+  @moduledoc false
+
+  defstruct [:id, :key, :content_type, :parts]
+
+  def new(key, opts) when is_binary(key) when is_list(opts) do
+    opts = Keyword.validate!(opts, content_type: nil)
+
+    %__MODULE__{
+      id: Ecto.UUID.generate(),
+      key: key,
+      content_type: opts[:content_type],
+      parts: %{}
+    }
+  end
+
+  def upload_part(multipart_upload, part_number, data) do
+    %{multipart_upload | parts: Map.put(multipart_upload.parts, part_number, data)}
+  end
+
+  def join(multipart_upload) do
+    multipart_upload.parts
+    |> Enum.sort_by(&elem(&1, 0))
+    |> Enum.map_join(&elem(&1, 1))
+  end
+end

@@ -1,0 +1,50 @@
+defmodule <%= inspect @module %> do
+  @moduledoc false
+
+  def render_list_objects do
+    """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <ListBucketResult>
+        <IsTruncated>false</IsTruncated>
+        <Contents>
+        </Contents>
+    </ListBucketResult>
+    """
+  end
+
+  def render_create_multipart_upload_response(bucket, key, upload_id) do
+    """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <InitiateMultipartUploadResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+      <Bucket>#{bucket}</Bucket>
+      <Key>#{key}</Key>
+      <UploadId>#{upload_id}</UploadId>
+    </InitiateMultipartUploadResult>
+    """
+  end
+
+  def render_complete_multipart_upload_response(bucket, key) do
+    """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <CompleteMultipartUploadResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+      <Location>http://#{bucket}.s3.us-east-1.amazonaws.com/#{key}</Location>
+      <Bucket>#{bucket}</Bucket>
+      <Key>#{key}</Key>
+      <ETag>"3858f62230ac3c915f300c664312c11f-9"</ETag>
+    </CompleteMultipartUploadResult>
+    """
+  end
+
+  @spec render_copy_object_response(keyword()) :: String.t()
+  def render_copy_object_response(opts \\ []) do
+    etag = Keyword.get(opts, :etag, Ecto.UUID.generate())
+    last_modified = Keyword.get(opts, :last_modified, DateTime.to_iso8601(DateTime.utc_now()))
+
+    """
+    <CopyObjectResult>
+      <ETag>"#{etag}"</ETag>
+      <LastModified>#{last_modified}</LastModified>
+    </CopyObjectResult>
+    """
+  end
+end

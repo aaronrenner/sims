@@ -1,0 +1,54 @@
+defmodule <%= inspect @module %> do
+  @moduledoc false
+
+  alias <%= inspect @simulator.namespace %>.StateServer.State.MultipartUpload
+  alias <%= inspect @simulator.namespace %>.StateServer.State.Object
+
+  defstruct [:name, :objects, :multipart_uploads]
+
+  def new(name) do
+    %__MODULE__{
+      name: name,
+      objects: %{},
+      multipart_uploads: %{}
+    }
+  end
+
+  def create_multipart_upload(bucket, key, opts) do
+    id = Ecto.UUID.generate()
+    multipart_upload = MultipartUpload.new(key, opts)
+
+    {{:ok, id}, %{bucket | multipart_uploads: Map.put(bucket.multipart_uploads, id, multipart_upload)}}
+  end
+
+  def upload_part(bucket, upload_id, part_number, data) do
+    multipart_uploads =
+      Map.update!(bucket.multipart_uploads, upload_id, &MultipartUpload.upload_part(&1, part_number, data))
+
+    {:ok, %{bucket | multipart_uploads: multipart_uploads}}
+  end
+
+  def complete_multipart_upload(bucket, upload_id) do
+    {%{^upload_id => multipart_upload}, multipart_uploads} = Map.split(bucket.multipart_uploads, [upload_id])
+    data = MultipartUpload.join(multipart_upload)
+
+    put_object(%{bucket | multipart_uploads: multipart_uploads}, multipart_upload.key, data,
+      content_type: multipart_upload.content_type
+    )
+  end
+
+  def list_keys(bucket) do
+    bucket.objects |> Map.keys() |> Enum.sort()
+  end
+
+  def fetch_object(bucket, key) do
+    case Map.fetch(bucket.objects, key) do
+      {:ok, object} -> {:ok, object}
+      :error -> {:error, :key_not_found}
+    end
+  end
+
+  def put_object(bucket, key, data, opts) do
+    {:ok, %{bucket | objects: Map.put(bucket.objects, key, Object.new(data, opts))}}
+  end
+end

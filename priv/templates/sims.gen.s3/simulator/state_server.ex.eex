@@ -1,0 +1,86 @@
+defmodule <%= inspect @module %> do
+  @moduledoc false
+
+  use Agent
+
+  alias <%= inspect @module %>.State
+  alias <%= inspect @module %>.State.Object
+
+  @type t :: pid
+  @type bucket_name :: String.t()
+  @type content_type :: String.t()
+  @type data :: String.t()
+  @type key :: String.t()
+  @type upload_id :: String.t()
+
+  @type content_type_opt :: {:content_type, content_type | nil}
+
+  def start_link(_opts \\ []) do
+    Agent.start_link(fn -> State.new() end)
+  end
+
+  @spec create_bucket(t, bucket_name) :: :ok | {:error, :bucket_already_exists}
+  def create_bucket(server, bucket_name) do
+    Agent.get_and_update(server, &State.create_bucket(&1, bucket_name))
+  end
+
+  @spec list_bucket_names(t) :: [bucket_name]
+  def list_bucket_names(server) do
+    Agent.get(server, &State.list_bucket_names/1)
+  end
+
+  @spec list_keys(t, bucket_name) :: {:ok, [key]} | {:error, :bucket_not_found}
+  def list_keys(server, bucket_name) do
+    Agent.get(server, &State.list_keys(&1, bucket_name))
+  end
+
+  @spec fetch_object(t, bucket_name, key) :: {:ok, Object.t()} | {:error, :bucket_not_found | :key_not_found}
+  def fetch_object(server, bucket_name, key) do
+    Agent.get(server, &State.fetch_object(&1, bucket_name, key))
+  end
+
+  @spec put_object(t, bucket_name, key, data, [content_type_opt]) :: :ok | {:error, :bucket_not_found | :key_not_found}
+  def put_object(server, bucket_name, key, data, opts) do
+    Agent.get_and_update(server, &State.put_object(&1, bucket_name, key, data, opts))
+  end
+
+  @spec copy_object(t, bucket_name, key, bucket_name, key) :: :ok | {:error, :bucket_not_found | :key_not_found}
+  def copy_object(server, source_bucket_name, source_key, dest_bucket_name, dest_key) do
+    with {:ok, source_object} <- fetch_object(server, source_bucket_name, source_key) do
+      put_object(server, dest_bucket_name, dest_key, source_object.data, content_type: source_object.content_type)
+    end
+  end
+
+  @spec create_multipart_upload(t, bucket_name, key, [content_type_opt]) :: {:ok, upload_id} | {:error, :bucket_not_found}
+  def create_multipart_upload(server, bucket, key, opts) when is_list(opts) do
+    Agent.get_and_update(server, &State.create_multipart_upload(&1, bucket, key, opts))
+  end
+
+  @spec upload_part(t, bucket_name, key, upload_id, integer, data) :: :ok | {:error, :bucket_not_found}
+  def upload_part(server, bucket, key, upload_id, part_number, data) when is_integer(part_number) do
+    Agent.get_and_update(server, &State.upload_part(&1, bucket, key, upload_id, part_number, data))
+  end
+
+  @spec complete_multipart_upload(t, bucket_name, key, upload_id) :: :ok | {:error, :bucket_not_found}
+  def complete_multipart_upload(server, bucket, key, upload_id) do
+    Agent.get_and_update(server, &State.complete_multipart_upload(&1, bucket, key, upload_id))
+  end
+
+  def get_response_stub(server, route_id) do
+    server
+    |> get_state()
+    |> State.get_response_stub(route_id)
+  end
+
+  def stub_response(server, route_id, response_id) do
+    Agent.update(server, &State.stub_response(&1, route_id, response_id))
+  end
+
+  def clear_stubbed_responses(server) do
+    Agent.update(server, &State.clear_stubbed_responses(&1))
+  end
+
+  def get_state(server) do
+    Agent.get(server, & &1)
+  end
+end

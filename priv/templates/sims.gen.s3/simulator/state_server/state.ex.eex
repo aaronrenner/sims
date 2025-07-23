@@ -1,0 +1,91 @@
+defmodule <%= inspect @module %> do
+  @moduledoc false
+
+  alias <%= inspect @module %>.Bucket
+
+  @type t :: map()
+
+  @spec new() :: t
+  def new do
+    %{
+      buckets: %{},
+      response_stubs: %{}
+    }
+  end
+
+  def create_bucket(state, bucket_name) do
+    if Map.has_key?(state.buckets, bucket_name) do
+      {{:error, :bucket_already_exists}, state}
+    else
+      bucket = Bucket.new(bucket_name)
+      {:ok, %{state | buckets: Map.put(state.buckets, bucket_name, bucket)}}
+    end
+  end
+
+  def list_keys(state, bucket_name) do
+    with {:ok, bucket} <- fetch_bucket(state, bucket_name) do
+      {:ok, Bucket.list_keys(bucket)}
+    end
+  end
+
+  def list_bucket_names(state) do
+    state.buckets |> Map.keys() |> Enum.sort()
+  end
+
+  def fetch_object(state, bucket_name, key) do
+    with {:ok, bucket} <- fetch_bucket(state, bucket_name) do
+      Bucket.fetch_object(bucket, key)
+    end
+  end
+
+  def put_object(state, bucket_name, key, data, opts) do
+    get_and_update_bucket(state, bucket_name, &Bucket.put_object(&1, key, data, opts))
+  end
+
+  def create_multipart_upload(state, bucket_name, key, opts) do
+    get_and_update_bucket(state, bucket_name, &Bucket.create_multipart_upload(&1, key, opts))
+  end
+
+  def upload_part(state, bucket_name, _key, upload_id, part, data) when is_integer(part) do
+    get_and_update_bucket(state, bucket_name, &Bucket.upload_part(&1, upload_id, part, data))
+  end
+
+  def complete_multipart_upload(state, bucket_name, _key, upload_id) do
+    get_and_update_bucket(state, bucket_name, &Bucket.complete_multipart_upload(&1, upload_id))
+  end
+
+  def get_response_stub(state, route_id) do
+    with nil <- state.response_stubs[:all] do
+      state.response_stubs[route_id]
+    end
+  end
+
+  def stub_response(state, route_id, response_id) do
+    response_stubs = Map.put(state.response_stubs, route_id, response_id)
+
+    %{state | response_stubs: response_stubs}
+  end
+
+  def clear_stubbed_responses(state) do
+    %{state | response_stubs: %{}}
+  end
+
+  defp fetch_bucket(state, bucket_name) do
+    case Map.fetch(state.buckets, bucket_name) do
+      {:ok, bucket} -> {:ok, bucket}
+      :error -> {:error, :bucket_not_found}
+    end
+  end
+
+  defp get_and_update_bucket(state, bucket_name, function) when is_function(function, 1) do
+    case fetch_bucket(state, bucket_name) do
+      {:ok, bucket} ->
+        {result, updated_bucket} = function.(bucket)
+
+        {result, %{state | buckets: Map.put(state.buckets, bucket_name, updated_bucket)}}
+
+      {:error, :bucket_not_found} = result ->
+        {result, state}
+    end
+  end
+end

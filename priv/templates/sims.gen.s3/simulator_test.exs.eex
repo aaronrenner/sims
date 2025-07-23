@@ -1,0 +1,31 @@
+defmodule <%= inspect @module %> do
+  use ExUnit.Case, async: true
+
+  alias <%= inspect @simulator.namespace %>
+  alias ExAws.S3
+
+  setup do
+    sim = start_supervised!(<%= inspect @simulator.alias %>)
+
+    [<%= @simulator.underscore_name %>_simulator: sim]
+  end
+
+  test "interacting with buckets", %{<%= @simulator.underscore_name %>_simulator: sim} do
+    bucket_name = "test-bucket"
+
+    # Create a bucket
+    assert :ok = <%= inspect @simulator.alias %>.create_bucket(sim, bucket_name)
+
+    config = <%= inspect @simulator.alias %>.ex_aws_config(sim) ++ [access_key_id: "test", secret_access_key: "secret"]
+
+    object_data = "Hello, S3!"
+
+    S3.put_object(bucket_name, "my_object", object_data) |> ExAws.request!(config)
+
+    response =
+      S3.get_object(bucket_name, "my_object")
+      |> ExAws.request!(config)
+
+    assert response.body == object_data
+  end
+end

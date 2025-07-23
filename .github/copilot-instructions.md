@@ -20,6 +20,13 @@ Sims is a code generator for test simulators that mock external services. It pro
   - These tests are stored in test/sims/<simulator_name>_test.exs
   - All commands to mix sims.gen.<simulator_name> should include the --include-tests option so tests are generated.
 
+### Template conventions
+1. Template files should be named with the .eex extension.
+2. Template files should be placed in the appropriate directory under priv/templates/sims.gen.<simulator_name>/.
+3. Template files should use EEx syntax for dynamic content generation.
+4. `@module` defines the module name for the module generated in the current template
+5. `@simulator.namespace` defines defines the root namespace for the simulator being generated
+
 ## AI Tooling
 - Use the search_package_docs tool to lookup information about specific libraries
 - Use the get_package_location tool to read the source code of specific files

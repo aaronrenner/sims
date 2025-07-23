@@ -1,0 +1,260 @@
+defmodule <%= inspect @module %> do
+  @moduledoc false
+
+  use Plug.Router
+
+  alias <%= inspect @simulator.namespace %>.StateServer
+  alias <%= inspect @simulator.namespace %>.WebServer.Responses
+
+  plug :match
+  plug :fetch_query_params
+
+  plug Plug.Parsers,
+    parsers: [:json],
+    pass: ["*/*"],
+    json_decoder: Jason
+
+  plug Plug.Logger
+
+  plug :return_stubbed_responses
+
+  plug :dispatch
+
+  def call(conn, opts) do
+    {state_server, opts} = Keyword.pop!(opts, :state_server)
+
+    conn
+    |> assign(:state_server, state_server)
+    |> super(opts)
+  end
+
+  get "/:bucket", assigns: %{endpoint_id: :list_objects_v2} do
+    send_resp(conn, 200, Responses.render_list_objects())
+  end
+
+  head "/:bucket/*key_path", assigns: %{endpoint_id: :head_object} do
+    bucket = conn.path_params["bucket"]
+    key = Enum.join(conn.path_params["key_path"], "/")
+
+    case StateServer.fetch_object(conn.assigns.state_server, bucket, key) do
+      {:ok, object} ->
+        conn
+        |> put_resp_header("content-length", to_string(object.content_length))
+        |> maybe_put_content_type_header(object.content_type)
+        |> put_resp_header("etag", "\"#{:sha |> :crypto.hash(object.data) |> Base.encode16(case: :lower)}\"")
+        |> send_resp(200, "")
+
+      {:error, :key_not_found} ->
+        send_resp(conn, 404, "")
+    end
+  end
+
+  get "/:bucket/*key_path", assigns: %{endpoint_id: :get_object} do
+    bucket = conn.path_params["bucket"]
+    key = Enum.join(conn.path_params["key_path"], "/")
+
+    case StateServer.fetch_object(conn.assigns.state_server, bucket, key) do
+      {:ok, object} ->
+        data = trim_data_to_requested_range(object.data, conn)
+
+        conn
+        |> put_resp_header("content-length", to_string(object.content_length))
+        |> maybe_put_content_type_header(object.content_type)
+        |> send_resp(200, data)
+
+      {:error, :key_not_found} ->
+        send_resp(conn, 404, "")
+    end
+  end
+
+  post "/:bucket/*key_path", assigns: %{endpoint_id: :create_multipart_upload} do
+    bucket = conn.path_params["bucket"]
+    key = Enum.join(conn.path_params["key_path"], "/")
+
+    case conn.query_params do
+      %{"uploads" => _} ->
+        {:ok, upload_id} =
+          StateServer.create_multipart_upload(
+            conn.assigns.state_server,
+            bucket,
+            key,
+            content_type: conn |> get_req_header("content-type") |> List.first()
+          )
+
+        send_resp(
+          conn,
+          200,
+          Responses.render_create_multipart_upload_response(bucket, key, upload_id)
+        )
+
+      %{"uploadId" => upload_id} ->
+        :ok =
+          StateServer.complete_multipart_upload(
+            conn.assigns.state_server,
+            bucket,
+            key,
+            upload_id
+          )
+
+        send_resp(
+          conn,
+          200,
+          Responses.render_complete_multipart_upload_response(bucket, key)
+        )
+    end
+  end
+
+  put "/:bucket/*key_path", assigns: %{endpoint_id: :put_object} do
+    bucket = conn.path_params["bucket"]
+    key = Enum.join(conn.path_params["key_path"], "/")
+
+    case parse_put_request(conn) do
+      {:copy_object, %{source_path: source_path}} ->
+        handle_copy_object(conn, bucket, source_path, key)
+
+      {:upload_part, %{part_number: part_number, upload_id: upload_id}} ->
+        handle_multipart_upload(conn, bucket, key, part_number, upload_id)
+
+      {:put_object, %{body: body, content_type: content_type}} ->
+        handle_put_object(conn, bucket, key, body, content_type)
+    end
+  end
+
+  defp parse_put_request(conn) do
+    cond do
+      match?([_value], get_req_header(conn, "x-amz-copy-source")) ->
+        [source_path] = get_req_header(conn, "x-amz-copy-source")
+
+        {:copy_object,
+         %{
+           source_path: source_path
+         }}
+
+      Map.has_key?(conn.query_params, "partNumber") and Map.has_key?(conn.query_params, "uploadId") ->
+        {:upload_part,
+         %{
+           part_number: conn.query_params["partNumber"],
+           upload_id: conn.query_params["uploadId"]
+         }}
+
+      true ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+
+        content_type = conn |> get_req_header("content-type") |> List.first() || "application/octet-stream"
+
+        {:put_object,
+         %{
+           body: body,
+           content_type: content_type
+         }}
+    end
+  end
+
+  defp handle_copy_object(conn, bucket, source_path, destination_key) do
+    [source_bucket, source_key] =
+      source_path
+      |> String.trim_leading("/")
+      |> String.split("/", parts: 2)
+
+    :ok = StateServer.copy_object(conn.assigns.state_server, source_bucket, source_key, bucket, destination_key)
+
+    conn
+    |> Plug.Conn.put_resp_header("ETag", random_string(32))
+    |> send_resp(200, Responses.render_copy_object_response())
+  end
+
+  defp handle_multipart_upload(conn, bucket, key, part_number, upload_id) do
+    {:ok, body, conn} = Plug.Conn.read_body(conn)
+
+    :ok =
+      StateServer.upload_part(
+        conn.assigns.state_server,
+        bucket,
+        key,
+        upload_id,
+        String.to_integer(part_number),
+        body
+      )
+
+    conn
+    |> Plug.Conn.put_resp_header("ETag", random_string(32))
+    |> send_resp(200, "")
+  end
+
+  defp handle_put_object(conn, bucket, key, body, content_type) do
+    :ok =
+      StateServer.put_object(
+        conn.assigns.state_server,
+        bucket,
+        key,
+        body,
+        content_type: content_type
+      )
+
+    conn
+    |> Plug.Conn.put_resp_header("ETag", random_string(32))
+    |> send_resp(200, "")
+  end
+
+  defp return_stubbed_responses(conn, _opts) do
+    endpoint_id = fetch_endpoint_id_from_assigns!(conn)
+
+    case StateServer.get_response_stub(conn.assigns.state_server, endpoint_id) do
+      nil ->
+        conn
+
+      :internal_server_error ->
+        conn
+        |> send_resp(500, "Internal Server Error")
+        |> halt()
+
+      :invalid_response ->
+        conn
+        |> send_resp(200, "Invalid")
+        |> halt()
+    end
+  end
+
+  defp fetch_endpoint_id_from_assigns!(conn) do
+    case Map.fetch(conn.assigns, :endpoint_id) do
+      {:ok, endpoint_id} when is_atom(endpoint_id) ->
+        endpoint_id
+
+      _ ->
+        path = Plug.Router.match_path(conn)
+        method = conn.method |> to_string() |> String.downcase()
+
+        raise """
+        endpoint_id must be added to the assigns of the route definition
+
+            #{method} #{inspect(path)}, assigns: %{endpoint_id: :my_endpoint_id} do
+              #...
+            end
+        """
+    end
+  end
+
+  defp trim_data_to_requested_range(data, conn) do
+    case get_req_header(conn, "range") do
+      ["bytes=" <> range] ->
+        [startp, endp] = range |> String.split("-") |> Enum.map(&String.to_integer/1)
+        {:ok, io_device} = :file.open(data, [:ram, :binary])
+        {:ok, chunk} = :file.pread(io_device, startp, endp - startp + 1)
+
+        chunk
+
+      _ ->
+        data
+    end
+  end
+
+  defp maybe_put_content_type_header(conn, nil), do: conn
+
+  defp maybe_put_content_type_header(conn, content_type) do
+    put_resp_header(conn, "content-type", content_type)
+  end
+
+  defp random_string(length) do
+    :crypto.strong_rand_bytes(length) |> Base.url_encode64() |> binary_part(0, length)
+  end
+end

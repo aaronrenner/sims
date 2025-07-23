@@ -1,0 +1,210 @@
+defmodule <%= inspect @module %> do
+  @moduledoc """
+  Simulator for S3 API
+  """
+
+  alias <%= inspect @module %>.PortCache
+  alias <%= inspect @module %>.StateServer
+  alias <%= inspect @module %>.WebServer
+
+  @type t :: pid
+
+  @type route_id ::
+          :all
+          | :list_objects_v2
+
+  @type bucket_name :: String.t()
+  @type key :: String.t()
+
+  @type content_type_opt :: {:content_type, String.t() | nil}
+
+  @doc false
+  def child_spec(init_arg) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [init_arg]},
+      type: :supervisor
+    }
+  end
+
+  @doc """
+  Start up a instance, linked to the current test process
+  """
+  @spec start_link(keyword) :: Supervisor.on_start()
+  def start_link(_opts) do
+    with {:ok, sup} <- Supervisor.start_link([], strategy: :rest_for_one) do
+      {:ok, _} = Application.ensure_all_started(:bandit)
+
+      {:ok, port_cache} = Supervisor.start_child(sup, PortCache)
+      {:ok, state_server} = Supervisor.start_child(sup, StateServer)
+
+      {:ok, _web_server} =
+        Supervisor.start_child(
+          sup,
+          {WebServer, port_cache: port_cache, state_server: state_server}
+        )
+
+      {:ok, sup}
+    end
+  end
+
+  @doc """
+  Create a new bucket
+  """
+  @spec create_bucket(t, bucket_name) :: :ok | {:error, :bucket_already_exists}
+  def create_bucket(sim, bucket_name) do
+    sim
+    |> lookup_child_process!(StateServer)
+    |> StateServer.create_bucket(bucket_name)
+  end
+
+  @doc """
+  Lists the buckets known for this simulator
+  """
+  @spec list_bucket_names(t) :: [bucket_name]
+  def list_bucket_names(sim) do
+    sim
+    |> lookup_child_process!(StateServer)
+    |> StateServer.list_bucket_names()
+  end
+
+  @doc """
+  Lists the keys for a given bucket
+  """
+  @spec list_keys(t, bucket_name) :: {:ok, [key]} | {:error, :bucket_not_found}
+  def list_keys(sim, bucket_name) do
+    sim
+    |> lookup_child_process!(StateServer)
+    |> StateServer.list_keys(bucket_name)
+  end
+
+  @doc """
+  Fetches an object's data
+  """
+  @spec fetch_object(t, bucket_name, key) :: {:ok, binary} | {:error, :bucket_not_found | :key_not_found}
+  def fetch_object(sim, bucket_name, key) do
+    with {:ok, object} <-
+           sim
+           |> lookup_child_process!(StateServer)
+           |> StateServer.fetch_object(bucket_name, key) do
+      {:ok, object.data}
+    end
+  end
+
+  @doc """
+  Fetches an object's data, raising an error if doesn't exist
+
+  See `fetch_object/2`
+  """
+  @spec fetch_object!(t, bucket_name, key) :: binary
+  def fetch_object!(sim, bucket_name, key) do
+    case fetch_object(sim, bucket_name, key) do
+      {:ok, data} -> data
+      {:error, :bucket_not_found} -> raise "Bucket not found: #{inspect(bucket_name)}"
+      {:error, :key_not_found} -> raise "Key not found: #{inspect(key)}. (Bucket=#{inspect(bucket_name)})"
+    end
+  end
+
+  @doc """
+  Uploads an object
+  """
+  @spec put_object(t, bucket_name, key, binary, [content_type_opt]) :: :ok | {:error, :bucket_not_found}
+  def put_object(sim, bucket_name, key, data, opts \\ []) do
+    sim
+    |> lookup_child_process!(StateServer)
+    |> StateServer.put_object(bucket_name, key, data, opts)
+  end
+
+  @doc """
+  Close the simulator's TCP socket.
+  """
+  @spec down(t) :: :ok
+  def down(sim) do
+    sim
+    |> lookup_child_process!(WebServer)
+    |> ThousandIsland.stop()
+  end
+
+  @doc """
+  Reopen the simulator's TCP socket.
+  """
+  @spec up(t) :: :ok
+  def up(sim) do
+    port_cache = lookup_child_process!(sim, PortCache)
+    state_server = lookup_child_process!(sim, StateServer)
+
+    case Supervisor.start_child(
+           sim,
+           {WebServer, port_cache: port_cache, state_server: state_server}
+         ) do
+      {:ok, _web_server} -> :ok
+      {:error, :already_present} -> Supervisor.restart_child(sim, WebServer)
+    end
+
+    :ok
+  end
+
+  @doc """
+  Causes the server to return internal server errors
+  """
+  @spec trigger_internal_server_errors(t, route_id) :: :ok
+  def trigger_internal_server_errors(sim, route_id \\ :all) do
+    sim
+    |> lookup_child_process!(StateServer)
+    |> StateServer.stub_response(route_id, :internal_server_error)
+  end
+
+  @doc """
+  Causes the server to return invalid responses
+  """
+  @spec trigger_invalid_responses(t, route_id) :: :ok
+  def trigger_invalid_responses(sim, route_id \\ :all) do
+    sim
+    |> lookup_child_process!(StateServer)
+    |> StateServer.stub_response(route_id, :invalid_response)
+  end
+
+  @doc """
+  Gets the base_url for this instance.
+  """
+  @spec base_url(t) :: String.t()
+  def base_url(sim) do
+    "http://localhost:#{get_port(sim)}"
+  end
+
+  @doc """
+  Gets the base_url for the given bucket
+  """
+  @spec bucket_base_url(t, bucket_name) :: String.t()
+  def bucket_base_url(sim, bucket_name) do
+    "#{base_url(sim)}/#{bucket_name}/"
+  end
+
+  @doc """
+  Returns the configuration overrides needed to pass to ExAWS to make it hit
+  this simulator.
+  """
+  @spec ex_aws_config(t) :: keyword()
+  def ex_aws_config(sim) do
+    [
+      scheme: "http://",
+      host: "localhost",
+      port: get_port(sim)
+    ]
+  end
+
+  defp get_port(sim) do
+    sim
+    |> lookup_child_process!(PortCache)
+    |> PortCache.get()
+  end
+
+  defp lookup_child_process!(sup, id) do
+    {^id, pid, _, _} =
+      sup
+      |> Supervisor.which_children()
+      |> List.keyfind!(id, 0)
+
+    pid
+  end
+end
