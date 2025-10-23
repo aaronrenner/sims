@@ -70,5 +70,9 @@ defmodule Sims do
   have other niceities that adapt your application's testing patterns to the
   simulator's Elixir API.
 
+  # Customizing the generated code
+  You can customize the generated code by creating a template in your project's
+  priv/templates/sims.gen.<simulator_name> directory. The template will be used
+  in place of the default template.
   """
 end

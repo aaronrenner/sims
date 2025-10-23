@@ -1,6 +1,7 @@
 defmodule Mix.Tasks.Sims.Gen.HttpCrud do
   use Igniter.Mix.Task
 
+  alias Mix.Sims.CodeGeneration
   alias Mix.Sims.Model
   alias Mix.Sims.Simulator
   alias Mix.Sims.SimulatorHelpersModule
@@ -25,6 +26,7 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
   * `--include-response-stubs` - Generate helpers for stubbing responses like internal server errors
   * `--include-app-config` - Generate the app config modules and SimulatorHelpers module for switching the app to talk to the simulator
   """
+  @template_namespace "sims.gen.http_crud"
 
   @impl Igniter.Mix.Task
   def info(_argv, _composing_task) do
@@ -108,7 +110,7 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
 
         igniter
         |> Igniter.copy_template(
-          Path.join(base_template_path(), "simulator_test.exs.eex"),
+          CodeGeneration.find_template_path(@template_namespace, "simulator_test.exs.eex"),
           Igniter.Project.Module.proper_location(igniter, module, :test),
           module: module,
           simulator: igniter.assigns.simulator,
@@ -137,7 +139,10 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
              Igniter.Code.Common.add_code(
                zipper,
                EEx.eval_file(
-                 Path.join(base_template_path(), "config_module_function.eex"),
+                 CodeGeneration.find_template_path(
+                   @template_namespace,
+                   "config_module_function.eex"
+                 ),
                  assigns: [
                    simulator: igniter.assigns.simulator
                  ]
@@ -157,7 +162,10 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
            Igniter.Code.Common.add_code(
              zipper,
              EEx.eval_file(
-               Path.join(base_template_path(), "config_behaviour_callback.eex"),
+               CodeGeneration.find_template_path(
+                 @template_namespace,
+                 "config_behaviour_callback.eex"
+               ),
                assigns: [
                  simulator: igniter.assigns.simulator
                ]
@@ -175,7 +183,10 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
            Igniter.Code.Common.add_code(
              zipper,
              EEx.eval_file(
-               Path.join(base_template_path(), "config_default_adapter_function.eex"),
+               CodeGeneration.find_template_path(
+                 @template_namespace,
+                 "config_default_adapter_function.eex"
+               ),
                assigns: [
                  simulator: igniter.assigns.simulator,
                  swappable_config: igniter.assigns.swappable_config
@@ -198,7 +209,10 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
         {false, igniter} ->
           Igniter.copy_template(
             igniter,
-            Path.join(base_template_path(), "simulator_helpers_module.ex.eex"),
+            CodeGeneration.find_template_path(
+              @template_namespace,
+              "simulator_helpers_module.ex.eex"
+            ),
             Igniter.Project.Module.proper_location(igniter, module, :test_support),
             module: module
           )
@@ -208,7 +222,10 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
          Igniter.Code.Common.add_code(
            zipper,
            EEx.eval_file(
-             Path.join(base_template_path(), "simulator_helpers_functions.eex"),
+             CodeGeneration.find_template_path(
+               @template_namespace,
+               "simulator_helpers_functions.eex"
+             ),
              assigns: [
                simulator: igniter.assigns.simulator,
                swappable_config: igniter.assigns.swappable_config
@@ -228,7 +245,7 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
 
     Igniter.copy_template(
       igniter,
-      Path.join(base_template_path(), template_path),
+      CodeGeneration.find_template_path(@template_namespace, template_path),
       Igniter.Project.Module.proper_location(igniter, module, :test_support),
       module: module,
       simulator: igniter.assigns.simulator,
@@ -258,9 +275,5 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
     [
       response_stubs?: Keyword.fetch!(options, :include_response_stubs)
     ]
-  end
-
-  defp base_template_path do
-    Application.app_dir(:sims, "priv/templates/sims.gen.http_crud")
   end
 end
