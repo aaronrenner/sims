@@ -4,7 +4,7 @@ defmodule Mix.Tasks.Sims.Gen.HttpBasic do
   alias Mix.Sims.Simulator
   alias Mix.Sims.SimulatorHelpersModule
 
-  @example "mix sims.gen.http_basic MySimulator"
+  @example "mix sims.gen.http_basic PaymentGateway"
 
   @shortdoc "Generates a basic HTTP simulator"
   @moduledoc """
