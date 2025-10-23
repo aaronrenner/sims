@@ -81,7 +81,7 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
            Igniter.Code.Common.add_code(
              zipper,
              EEx.eval_file(
-               Path.join(base_template_path(), "test_helper.exs.eex"),
+               CodeGeneration.find_template_path(@template_namespace, "test_helper.exs.eex"),
                assigns: [swappable_config: swappable_config]
              )
            )}
@@ -109,9 +109,5 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
           swappable_config: igniter.assigns.swappable_config
         )
     end
-  end
-
-  defp base_template_path do
-    Application.app_dir(:sims, "priv/templates/sims.gen.config_module")
   end
 end
