@@ -1,6 +1,7 @@
 defmodule Mix.Tasks.Sims.Gen.ConfigModule do
   use Igniter.Mix.Task
 
+  alias Mix.Sims.CodeGeneration
   alias Mix.Sims.SwappableConfig
 
   @example "mix sims.gen.config_module"
@@ -18,6 +19,8 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
   #{@example}
   ```
   """
+
+  @template_namespace "sims.gen.config_module"
 
   @impl Igniter.Mix.Task
   def info(_argv, _composing_task) do
@@ -100,7 +103,7 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
       {false, igniter} ->
         Igniter.copy_template(
           igniter,
-          Path.join(base_template_path(), template_path),
+          CodeGeneration.find_template_path(@template_namespace, template_path),
           Igniter.Project.Module.proper_location(igniter, module),
           module: module,
           swappable_config: igniter.assigns.swappable_config

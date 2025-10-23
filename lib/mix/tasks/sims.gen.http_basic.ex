@@ -1,6 +1,7 @@
 defmodule Mix.Tasks.Sims.Gen.HttpBasic do
   use Igniter.Mix.Task
 
+  alias Mix.Sims.CodeGeneration
   alias Mix.Sims.Simulator
   alias Mix.Sims.SimulatorHelpersModule
 
@@ -25,6 +26,8 @@ defmodule Mix.Tasks.Sims.Gen.HttpBasic do
   * `--no-include-app-config` - Skip generating the app config modules and SimulatorHelpers module for
         pointing switching the app to talk to the simulator
   """
+
+  @template_namespace "sims.gen.http_basic"
 
   @impl Igniter.Mix.Task
   def info(_argv, _composing_task) do
@@ -101,7 +104,7 @@ defmodule Mix.Tasks.Sims.Gen.HttpBasic do
 
         igniter
         |> Igniter.copy_template(
-          Path.join(base_template_path(), "simulator_test.exs.eex"),
+          CodeGeneration.find_template_path(@template_namespace, "simulator_test.exs.eex"),
           Igniter.Project.Module.proper_location(igniter, module, :test),
           module: module,
           simulator: igniter.assigns.simulator,
@@ -129,7 +132,10 @@ defmodule Mix.Tasks.Sims.Gen.HttpBasic do
              Igniter.Code.Common.add_code(
                zipper,
                EEx.eval_file(
-                 Path.join(base_template_path(), "config_module_function.eex"),
+                 CodeGeneration.find_template_path(
+                   @template_namespace,
+                   "config_module_function.eex"
+                 ),
                  assigns: [
                    simulator: igniter.assigns.simulator
                  ]
@@ -149,7 +155,10 @@ defmodule Mix.Tasks.Sims.Gen.HttpBasic do
            Igniter.Code.Common.add_code(
              zipper,
              EEx.eval_file(
-               Path.join(base_template_path(), "config_behaviour_callback.eex"),
+               CodeGeneration.find_template_path(
+                 @template_namespace,
+                 "config_behaviour_callback.eex"
+               ),
                assigns: [
                  simulator: igniter.assigns.simulator
                ]
@@ -167,7 +176,10 @@ defmodule Mix.Tasks.Sims.Gen.HttpBasic do
            Igniter.Code.Common.add_code(
              zipper,
              EEx.eval_file(
-               Path.join(base_template_path(), "config_default_adapter_function.eex"),
+               CodeGeneration.find_template_path(
+                 @template_namespace,
+                 "config_default_adapter_function.eex"
+               ),
                assigns: [
                  simulator: igniter.assigns.simulator,
                  swappable_config: igniter.assigns.swappable_config
@@ -190,7 +202,10 @@ defmodule Mix.Tasks.Sims.Gen.HttpBasic do
         {false, igniter} ->
           Igniter.copy_template(
             igniter,
-            Path.join(base_template_path(), "simulator_helpers_module.ex.eex"),
+            CodeGeneration.find_template_path(
+              @template_namespace,
+              "simulator_helpers_module.ex.eex"
+            ),
             Igniter.Project.Module.proper_location(igniter, module, :test_support),
             module: module
           )
@@ -200,7 +215,10 @@ defmodule Mix.Tasks.Sims.Gen.HttpBasic do
          Igniter.Code.Common.add_code(
            zipper,
            EEx.eval_file(
-             Path.join(base_template_path(), "simulator_helpers_functions.eex"),
+             CodeGeneration.find_template_path(
+               @template_namespace,
+               "simulator_helpers_functions.eex"
+             ),
              assigns: [
                simulator: igniter.assigns.simulator,
                swappable_config: igniter.assigns.swappable_config
@@ -218,9 +236,11 @@ defmodule Mix.Tasks.Sims.Gen.HttpBasic do
        ) do
     module = Module.concat(igniter.assigns.simulator.namespace, child_module_name)
 
+    full_template_path = CodeGeneration.find_template_path(@template_namespace, template_path)
+
     Igniter.copy_template(
       igniter,
-      Path.join(base_template_path(), template_path),
+      full_template_path,
       Igniter.Project.Module.proper_location(igniter, module, :test_support),
       module: module,
       simulator: igniter.assigns.simulator
@@ -235,10 +255,6 @@ defmodule Mix.Tasks.Sims.Gen.HttpBasic do
       Expected the simulator, #{inspect(simulator_name)} to be a valid module name
       """)
     end
-  end
-
-  defp base_template_path do
-    Application.app_dir(:sims, "priv/templates/sims.gen.http_basic")
   end
 
   defp build_options(%{positional: _positional, options: options}) do
