@@ -50,4 +50,27 @@ defmodule Sims.Integration.HttpBasicTest do
 
     mix_run!(~w(test), app_path)
   end
+
+  @tag :tmp_dir
+  test "uses templates from local project", %{tmp_dir: tmp_dir} do
+    app_path = generate_project(tmp_dir)
+
+    File.mkdir_p!(Path.join(app_path, "priv/templates/sims.gen.http_basic"))
+    File.write!(Path.join(app_path, "priv/templates/sims.gen.http_basic/config_module_function.eex"), """
+    @doc false
+    def <%= @simulator.underscore_name %>_base_url do
+      adapter().<%= @simulator.underscore_name %>_base_url()
+    end
+    """)
+
+    mix_run!(~w(sims.gen.http_basic Blog --include-tests --yes), app_path)
+    mix_run!(~w(test), app_path)
+
+    assert File.read!(Path.join(app_path, "lib/sample_app/config.ex")) =~ """
+      @doc false
+      def blog_base_url do
+        adapter().blog_base_url()
+      end
+    """
+  end
 end
