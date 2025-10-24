@@ -45,6 +45,7 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
       schema: [
         config_module: :string,
         test_config_adapter: :string,
+        behaviour_module: :string,
         update_test_helper: :boolean
       ],
       # Default values for the options in the `schema`
@@ -69,15 +70,16 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
       SwappableConfig.new(
         Igniter.Project.Application.app_name(igniter),
         config_module,
-        test_config_adapter: igniter.args.options[:test_config_adapter]
+        test_config_adapter: igniter.args.options[:test_config_adapter],
+        behaviour: igniter.args.options[:behaviour_module]
       )
 
     igniter
     |> Igniter.assign(:swappable_config, swappable_config)
     |> Igniter.Project.Deps.add_dep({:mox, "~> 1.0", only: :test})
-    |> copy_template("config.ex.eex")
-    |> copy_template("config/adapter.ex.eex", Adapter)
-    |> copy_template("config/default_adapter.ex.eex", DefaultAdapter)
+    |> copy_template("config.ex.eex", swappable_config.namespace)
+    |> copy_template("config/adapter.ex.eex", swappable_config.behaviour)
+    |> copy_template("config/default_adapter.ex.eex", swappable_config.default_adapter)
     |> then(fn igniter ->
       if igniter.args.options[:update_test_helper] do
         Igniter.update_elixir_file(igniter, "test/test_helper.exs", fn zipper ->
@@ -110,10 +112,9 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
   defp copy_template(
          igniter,
          template_path,
-         child_module_name \\ nil
-       ) do
-    module = Module.concat(igniter.assigns.swappable_config.namespace, child_module_name)
-
+         module
+       )
+       when is_atom(module) do
     case Igniter.Project.Module.module_exists(igniter, module) do
       {true, igniter} ->
         igniter
