@@ -43,6 +43,7 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
       composes: [],
       # `OptionParser` schema
       schema: [
+        config_module: :string,
         test_config_adapter: :string,
         update_test_helper: :boolean
       ],
@@ -57,10 +58,17 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
 
   @impl Igniter.Mix.Task
   def igniter(igniter) do
+    config_module =
+      if custom_config = igniter.args.options[:config_module] do
+        Igniter.Project.Module.parse(custom_config)
+      else
+        Igniter.Project.Module.module_name(igniter, "Config")
+      end
+
     swappable_config =
       SwappableConfig.new(
         Igniter.Project.Application.app_name(igniter),
-        Igniter.Project.Module.module_name(igniter, "Config"),
+        config_module,
         test_config_adapter: igniter.args.options[:test_config_adapter]
       )
 
