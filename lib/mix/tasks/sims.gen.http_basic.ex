@@ -24,7 +24,7 @@ defmodule Mix.Tasks.Sims.Gen.HttpBasic do
   * `--include-tests` - Generate tests for this simulator
   * `--include-response-stubs` - Generate helpers for stubbing responses like internal server errors
   * `--no-include-app-config` - Skip generating the app config modules and SimulatorHelpers module for
-        pointing switching the app to talk to the simulator
+      pointing switching the app to talk to the simulator
   """
 
   @template_namespace "sims.gen.http_basic"

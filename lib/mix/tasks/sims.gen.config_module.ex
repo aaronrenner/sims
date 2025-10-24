@@ -18,6 +18,56 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
   ```sh
   #{@example}
   ```
+
+  ## Generated Modules
+
+  This task generates three modules and updates your test helper:
+
+  ### Configuration Module
+
+  The main configuration module (e.g., `YourApp.Config`) acts as the central
+  configuration interface for your application. It delegates to the configured
+  adapter, which can be swapped at runtime (particularly useful for testing).
+
+  The adapter is retrieved from application config with a key `:config_adapter`,
+  falling back to the default adapter in production.
+
+  ### Adapter Behaviour
+
+  The behaviour module (e.g., `YourApp.Config.Adapter`) defines the interface that
+  all adapter implementations must follow. You can add callbacks to this module to
+  define the functions your configuration needs to support.
+
+  ### Default Adapter
+
+  The default adapter module (e.g., `YourApp.Config.DefaultAdapter`) implements the
+  adapter behaviour and is used in production. This is where you'll add your actual
+  configuration logic.
+
+  ### Test Mock
+
+  A Mox mock (e.g., `YourApp.Config.MockAdapter`) is defined in `test/test_helper.exs`
+  and automatically configured as the adapter for tests. This allows you to mock
+  configuration behavior in your tests using Mox's `expect/3` and `stub/3` functions.
+
+  ## Options
+
+  * `--config-namespace` - The module name for the configuration namespace.
+    If not provided, defaults to `YourApp.Config`.
+
+  * `--config-behaviour` - The module name for the adapter behaviour that defines
+    the interface that adapters must implement. If not provided, a default name
+    will be generated based on the config namespace.
+
+  * `--config-default-adapter` - The module name for the default adapter implementation.
+    If not provided, a default name will be generated based on the config namespace.
+
+  * `--config-test-adapter` - The module name for the test adapter mock.
+    If not provided, a default name will be generated based on the config namespace.
+
+  * `--update-test-helper` - Whether to automatically update `test/test_helper.exs`
+    to add the Mox mock definition. Defaults to `true`. Set to `false` with
+    `--no-update-test-helper` to skip this step.
   """
 
   @template_namespace "sims.gen.config_module"
@@ -83,30 +133,32 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
     |> copy_template("config/adapter.ex.eex", swappable_config.behaviour)
     |> copy_template("config/default_adapter.ex.eex", swappable_config.default_adapter)
     |> then(fn igniter ->
-      if igniter.args.options[:update_test_helper] do
-        Igniter.update_elixir_file(igniter, "test/test_helper.exs", fn zipper ->
-          case Igniter.Code.Function.move_to_function_call_in_current_scope(
-                 zipper,
-                 {Mox, :defmock},
-                 2,
-                 &Igniter.Code.Function.argument_equals?(&1, 0, swappable_config.test_adapter)
-               ) do
-            {:ok, _} ->
-              {:ok, zipper}
+      if igniter.args.options[:update_test_helper],
+        do: update_test_helper(igniter, swappable_config),
+        else: igniter
+    end)
+  end
 
-            _ ->
-              {:ok,
-               Igniter.Code.Common.add_code(
-                 zipper,
-                 EEx.eval_file(
-                   CodeGeneration.find_template_path(@template_namespace, "test_helper.exs.eex"),
-                   assigns: [swappable_config: swappable_config]
-                 )
-               )}
-          end
-        end)
-      else
-        igniter
+  defp update_test_helper(igniter, swappable_config) do
+    Igniter.update_elixir_file(igniter, "test/test_helper.exs", fn zipper ->
+      case Igniter.Code.Function.move_to_function_call_in_current_scope(
+             zipper,
+             {Mox, :defmock},
+             2,
+             &Igniter.Code.Function.argument_equals?(&1, 0, swappable_config.test_adapter)
+           ) do
+        {:ok, _} ->
+          {:ok, zipper}
+
+        _ ->
+          {:ok,
+           Igniter.Code.Common.add_code(
+             zipper,
+             EEx.eval_file(
+               CodeGeneration.find_template_path(@template_namespace, "test_helper.exs.eex"),
+               assigns: [swappable_config: swappable_config]
+             )
+           )}
       end
     end)
   end
