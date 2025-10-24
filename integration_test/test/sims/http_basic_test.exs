@@ -78,7 +78,7 @@ defmodule Sims.Integration.HttpBasicTest do
       @behaviour <%= inspect @swappable_config.behaviour %>
 
       defp adapter do
-       Application.get_env(<%= inspect @swappable_config.app_name %>, :config_adapter, <%= inspect @swappable_config.default_adapter_alias %>)
+       Application.get_env(<%= inspect @swappable_config.app_name %>, :config_adapter, <%= @swappable_config.default_adapter_alias %>)
       end
     end
     """)
@@ -101,6 +101,47 @@ defmodule Sims.Integration.HttpBasicTest do
 
              defp adapter do
                Application.get_env(:sample_app, :config_adapter, DefaultAdapter)
+             end
+           end
+           """
+  end
+
+  @tag :tmp_dir
+  test "reads default parameters from project's config.exs", %{tmp_dir: tmp_dir} do
+    app_path = generate_project(tmp_dir)
+
+    File.mkdir_p!(Path.join(app_path, "config"))
+
+    File.write!(Path.join(app_path, "config/config.exs"), """
+    import Config
+
+    config :sample_app, :sims,
+      update_test_helper: false,
+      config_test_adapter: SampleApp.ConfigMock
+    """)
+
+    mix_run!(~w(sims.gen.http_basic PaymentGateway --include-tests --yes), app_path)
+
+    refute File.read!(Path.join(app_path, "test/test_helper.exs")) =~ "Mox.defmock"
+
+    assert File.read!(Path.join(app_path, "test/support/simulator_helpers.ex")) =~ """
+           defmodule SampleApp.SimulatorHelpers do
+             @moduledoc \"""
+             Helper functions for configuring the application to work with test simulators.
+             \"""
+
+             import ExUnit.Callbacks
+
+             @doc \"""
+             Configure the application to use the Payment Gateway simulator.
+             \"""
+             def configure_for_payment_gateway_simulator(_tags) do
+               sim = start_supervised!(SampleApp.PaymentGatewaySimulator)
+
+               base_url = SampleApp.PaymentGatewaySimulator.base_url(sim)
+               Mox.stub(SampleApp.ConfigMock, :payment_gateway_base_url, fn -> base_url end)
+
+               [payment_gateway_simulator: sim]
              end
            end
            """
