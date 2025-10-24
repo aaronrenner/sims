@@ -1,15 +1,21 @@
 defmodule Sims.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+
   def project do
     [
       app: :sims,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       dialyzer: dialyzer(System.get_env()),
-      aliases: aliases()
+      aliases: aliases(),
+
+      # Docs
+      source_url: "https://github.com/aaronrenner/sims",
+      docs: docs()
     ]
   end
 
@@ -17,6 +23,12 @@ defmodule Sims.MixProject do
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  defp docs do
+    [
+      source_ref: "v#{@version}"
     ]
   end
 
