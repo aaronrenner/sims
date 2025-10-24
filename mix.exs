@@ -12,8 +12,11 @@ defmodule Sims.MixProject do
       deps: deps(),
       dialyzer: dialyzer(System.get_env()),
       aliases: aliases(),
-
-      # Docs
+      description: "A library for creating test simulators for external services.",
+      licenses: ["MIT"],
+      links: %{
+        "GitHub" => "https://github.com/aaronrenner/sims"
+      },
       source_url: "https://github.com/aaronrenner/sims",
       docs: docs()
     ]
@@ -30,6 +33,9 @@ defmodule Sims.MixProject do
     [
       source_ref: "v#{@version}"
     ]
+  end
+
+  defp description do
   end
 
   # Run "mix help deps" to learn about dependencies.
