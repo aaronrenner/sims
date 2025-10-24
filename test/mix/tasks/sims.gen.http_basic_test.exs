@@ -138,7 +138,7 @@ defmodule Mix.Tasks.Sims.Gen.HttpBasicTest do
     test_project(app_name: :my_app)
     |> Igniter.compose_task(
       "sims.gen.http_basic",
-      ~w(PaymentGateway --test-config-adapter MyApp.ConfigMock)
+      ~w(PaymentGateway --config-test-adapter MyApp.ConfigMock)
     )
     |> assert_has_patch("test/test_helper.exs", """
     + |Mox.defmock(MyApp.ConfigMock, for: MyApp.Config.Adapter)

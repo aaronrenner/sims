@@ -25,7 +25,7 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModuleTest do
 
   test "allows overriding the test adapter module" do
     test_project(app_name: :my_app)
-    |> Igniter.compose_task("sims.gen.config_module", ~w(--test-config-adapter MyApp.ConfigMock))
+    |> Igniter.compose_task("sims.gen.config_module", ~w(--config-test-adapter MyApp.ConfigMock))
     |> assert_has_patch("test/test_helper.exs", """
     + |Mox.defmock(MyApp.ConfigMock, for: MyApp.Config.Adapter)
     + |Application.put_env(:my_app, :config_adapter, MyApp.ConfigMock)
@@ -34,7 +34,7 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModuleTest do
 
   test "allows overriding the config module name" do
     test_project(app_name: :my_app)
-    |> Igniter.compose_task("sims.gen.config_module", ~w(--config-module MyApp.CustomConfig))
+    |> Igniter.compose_task("sims.gen.config_module", ~w(--config-namespace MyApp.CustomConfig))
     |> assert_creates("lib/my_app/custom_config.ex", """
     defmodule MyApp.CustomConfig do
       @moduledoc \"""
@@ -68,7 +68,7 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModuleTest do
     test_project(app_name: :my_app)
     |> Igniter.compose_task(
       "sims.gen.config_module",
-      ~w(--behaviour-module MyApp.Config.Behaviour)
+      ~w(--config-behaviour MyApp.Config.Behaviour)
     )
     |> assert_creates("lib/my_app/config/behaviour.ex", """
     defmodule MyApp.Config.Behaviour do
@@ -107,7 +107,7 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModuleTest do
     test_project(app_name: :my_app)
     |> Igniter.compose_task(
       "sims.gen.config_module",
-      ~w(--default-adapter-module MyApp.Config.DefaultBackend)
+      ~w(--config-default-adapter MyApp.Config.DefaultBackend)
     )
     |> assert_creates("lib/my_app/config/default_backend.ex", """
     defmodule MyApp.Config.DefaultBackend do

@@ -43,10 +43,10 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
       composes: [],
       # `OptionParser` schema
       schema: [
-        config_module: :string,
-        test_config_adapter: :string,
-        behaviour_module: :string,
-        default_adapter_module: :string,
+        config_namespace: :string,
+        config_test_adapter: :string,
+        config_behaviour: :string,
+        config_default_adapter: :string,
         update_test_helper: :boolean
       ],
       # Default values for the options in the `schema`
@@ -61,7 +61,7 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
   @impl Igniter.Mix.Task
   def igniter(igniter) do
     config_module =
-      if custom_config = igniter.args.options[:config_module] do
+      if custom_config = igniter.args.options[:config_namespace] do
         Igniter.Project.Module.parse(custom_config)
       else
         Igniter.Project.Module.module_name(igniter, "Config")
@@ -71,9 +71,9 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
       SwappableConfig.new(
         Igniter.Project.Application.app_name(igniter),
         config_module,
-        test_config_adapter: igniter.args.options[:test_config_adapter],
-        behaviour: igniter.args.options[:behaviour_module],
-        default_adapter: igniter.args.options[:default_adapter_module]
+        test_config_adapter: igniter.args.options[:config_test_adapter],
+        behaviour: igniter.args.options[:config_behaviour],
+        default_adapter: igniter.args.options[:config_default_adapter]
       )
 
     igniter
