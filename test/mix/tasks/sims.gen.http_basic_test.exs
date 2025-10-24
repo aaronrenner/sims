@@ -134,6 +134,39 @@ defmodule Mix.Tasks.Sims.Gen.HttpBasicTest do
     |> refute_creates("lib/my_app/config/default_adapter.ex")
   end
 
+  test "allows overriding the test adapter module" do
+    test_project(app_name: :my_app)
+    |> Igniter.compose_task(
+      "sims.gen.http_basic",
+      ~w(PaymentGateway --test-config-adapter MyApp.ConfigMock)
+    )
+    |> assert_has_patch("test/test_helper.exs", """
+    + |Mox.defmock(MyApp.ConfigMock, for: MyApp.Config.Adapter)
+    + |Application.put_env(:my_app, :config_adapter, MyApp.ConfigMock)
+    """)
+    |> assert_creates("test/support/simulator_helpers.ex", """
+    defmodule MyApp.SimulatorHelpers do
+      @moduledoc \"""
+      Helper functions for configuring the application to work with test simulators.
+      \"""
+
+      import ExUnit.Callbacks
+
+      @doc \"""
+      Configure the application to use the Payment Gateway simulator.
+      \"""
+      def configure_for_payment_gateway_simulator(_tags) do
+        sim = start_supervised!(MyApp.PaymentGatewaySimulator)
+
+        base_url = MyApp.PaymentGatewaySimulator.base_url(sim)
+        Mox.stub(MyApp.ConfigMock, :payment_gateway_base_url, fn -> base_url end)
+
+        [payment_gateway_simulator: sim]
+      end
+    end
+    """)
+  end
+
   test "errors when passing a simulator name with invalid characters" do
     assert_raise Mix.Error, ~r/to be a valid module name/, fn ->
       test_project()

@@ -42,7 +42,9 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
       # This ensures your option schema includes options from nested tasks
       composes: [],
       # `OptionParser` schema
-      schema: [],
+      schema: [
+        test_config_adapter: :string
+      ],
       # Default values for the options in the `schema`
       defaults: [],
       # CLI aliases
@@ -57,7 +59,8 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
     swappable_config =
       SwappableConfig.new(
         Igniter.Project.Application.app_name(igniter),
-        Igniter.Project.Module.module_name(igniter, "Config")
+        Igniter.Project.Module.module_name(igniter, "Config"),
+        test_config_adapter: igniter.args.options[:test_config_adapter]
       )
 
     igniter

@@ -22,4 +22,13 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModuleTest do
     + |     {:mox, "~> 1.0", only: :test}
     """)
   end
+
+  test "allows overriding the test adapter module" do
+    test_project(app_name: :my_app)
+    |> Igniter.compose_task("sims.gen.config_module", ~w(--test-config-adapter MyApp.ConfigMock))
+    |> assert_has_patch("test/test_helper.exs", """
+    + |Mox.defmock(MyApp.ConfigMock, for: MyApp.Config.Adapter)
+    + |Application.put_env(:my_app, :config_adapter, MyApp.ConfigMock)
+    """)
+  end
 end
