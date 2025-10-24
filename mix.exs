@@ -10,13 +10,10 @@ defmodule Sims.MixProject do
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      package: package(),
       dialyzer: dialyzer(System.get_env()),
       aliases: aliases(),
       description: "A library for creating test simulators for external services.",
-      licenses: ["MIT"],
-      links: %{
-        "GitHub" => "https://github.com/aaronrenner/sims"
-      },
       source_url: "https://github.com/aaronrenner/sims",
       docs: docs()
     ]
@@ -35,9 +32,6 @@ defmodule Sims.MixProject do
     ]
   end
 
-  defp description do
-  end
-
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
@@ -47,6 +41,15 @@ defmodule Sims.MixProject do
       {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp package do
+    [
+      licenses: ["MIT"],
+      links: %{
+        "GitHub" => "https://github.com/aaronrenner/sims"
+      }
     ]
   end
 
