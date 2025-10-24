@@ -43,10 +43,11 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
       composes: [],
       # `OptionParser` schema
       schema: [
-        test_config_adapter: :string
+        test_config_adapter: :string,
+        update_test_helper: :boolean
       ],
       # Default values for the options in the `schema`
-      defaults: [],
+      defaults: [update_test_helper: true],
       # CLI aliases
       aliases: [],
       # A list of options in the schema that are required
@@ -69,25 +70,31 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
     |> copy_template("config.ex.eex")
     |> copy_template("config/adapter.ex.eex", Adapter)
     |> copy_template("config/default_adapter.ex.eex", DefaultAdapter)
-    |> Igniter.update_elixir_file("test/test_helper.exs", fn zipper ->
-      case Igniter.Code.Function.move_to_function_call_in_current_scope(
-             zipper,
-             {Mox, :defmock},
-             2,
-             &Igniter.Code.Function.argument_equals?(&1, 0, swappable_config.test_adapter)
-           ) do
-        {:ok, _} ->
-          {:ok, zipper}
+    |> then(fn igniter ->
+      if igniter.args.options[:update_test_helper] do
+        Igniter.update_elixir_file(igniter, "test/test_helper.exs", fn zipper ->
+          case Igniter.Code.Function.move_to_function_call_in_current_scope(
+                 zipper,
+                 {Mox, :defmock},
+                 2,
+                 &Igniter.Code.Function.argument_equals?(&1, 0, swappable_config.test_adapter)
+               ) do
+            {:ok, _} ->
+              {:ok, zipper}
 
-        _ ->
-          {:ok,
-           Igniter.Code.Common.add_code(
-             zipper,
-             EEx.eval_file(
-               CodeGeneration.find_template_path(@template_namespace, "test_helper.exs.eex"),
-               assigns: [swappable_config: swappable_config]
-             )
-           )}
+            _ ->
+              {:ok,
+               Igniter.Code.Common.add_code(
+                 zipper,
+                 EEx.eval_file(
+                   CodeGeneration.find_template_path(@template_namespace, "test_helper.exs.eex"),
+                   assigns: [swappable_config: swappable_config]
+                 )
+               )}
+          end
+        end)
+      else
+        igniter
       end
     end)
   end

@@ -31,4 +31,15 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModuleTest do
     + |Application.put_env(:my_app, :config_adapter, MyApp.ConfigMock)
     """)
   end
+
+  test "allows disabling updates to test helper" do
+    igniter =
+      test_project(app_name: :my_app)
+      |> Igniter.compose_task("sims.gen.config_module", ~w(--no-update-test-helper))
+
+    diff = diff(igniter)
+
+    refute diff =~ "Mox.defmock(MyApp.Config.MockAdapter, for: MyApp.Config.Adapter)"
+    refute diff =~ "Application.put_env(:my_app, :config_adapter, MyApp.Config.MockAdapter)"
+  end
 end
