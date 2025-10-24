@@ -19,13 +19,21 @@ defmodule Mix.Sims.SwappableConfig do
 
   @type new_opts :: [
           test_config_adapter: String.t(),
-          behaviour: String.t()
+          behaviour: String.t(),
+          default_adapter: String.t()
         ]
 
   @spec new(atom(), atom(), new_opts()) :: t
   def new(app_name, project_module_prefix, opts \\ [])
       when is_atom(project_module_prefix) and is_atom(app_name) do
-    opts = Keyword.validate!(opts, test_config_adapter: nil, behaviour: nil)
+    opts = Keyword.validate!(opts, test_config_adapter: nil, behaviour: nil, default_adapter: nil)
+
+    default_adapter =
+      if default_adapter_module_name = opts[:default_adapter] do
+        Igniter.Project.Module.parse(default_adapter_module_name)
+      else
+        Module.concat(project_module_prefix, DefaultAdapter)
+      end
 
     behaviour =
       if behaviour_module_name = opts[:behaviour] do
@@ -45,8 +53,8 @@ defmodule Mix.Sims.SwappableConfig do
       app_name: app_name,
       namespace: project_module_prefix,
       behaviour: behaviour,
-      default_adapter: Module.concat(project_module_prefix, DefaultAdapter),
-      default_adapter_alias: DefaultAdapter,
+      default_adapter: default_adapter,
+      default_adapter_alias: default_adapter |> Module.split() |> List.last(),
       test_adapter: test_adapter
     }
   end

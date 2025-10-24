@@ -103,6 +103,36 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModuleTest do
     """)
   end
 
+  test "allows overriding the default adapter module name" do
+    test_project(app_name: :my_app)
+    |> Igniter.compose_task(
+      "sims.gen.config_module",
+      ~w(--default-adapter-module MyApp.Config.DefaultBackend)
+    )
+    |> assert_creates("lib/my_app/config/default_backend.ex", """
+    defmodule MyApp.Config.DefaultBackend do
+      @moduledoc false
+
+      @behaviour MyApp.Config.Adapter
+    end
+    """)
+    |> assert_creates("lib/my_app/config.ex", """
+    defmodule MyApp.Config do
+      @moduledoc \"""
+      Main configuration module for the application
+      \"""
+
+      alias MyApp.Config.DefaultBackend
+
+      @behaviour MyApp.Config.Adapter
+
+      defp adapter do
+        Application.get_env(:my_app, :config_adapter, DefaultBackend)
+      end
+    end
+    """)
+  end
+
   test "allows disabling updates to test helper" do
     igniter =
       test_project(app_name: :my_app)

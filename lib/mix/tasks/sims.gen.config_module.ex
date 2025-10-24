@@ -46,6 +46,7 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
         config_module: :string,
         test_config_adapter: :string,
         behaviour_module: :string,
+        default_adapter_module: :string,
         update_test_helper: :boolean
       ],
       # Default values for the options in the `schema`
@@ -71,7 +72,8 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
         Igniter.Project.Application.app_name(igniter),
         config_module,
         test_config_adapter: igniter.args.options[:test_config_adapter],
-        behaviour: igniter.args.options[:behaviour_module]
+        behaviour: igniter.args.options[:behaviour_module],
+        default_adapter: igniter.args.options[:default_adapter_module]
       )
 
     igniter

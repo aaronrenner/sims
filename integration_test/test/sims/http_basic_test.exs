@@ -78,7 +78,7 @@ defmodule Sims.Integration.HttpBasicTest do
       @behaviour <%= inspect @swappable_config.behaviour %>
 
       defp adapter do
-       Application.get_env(<%= inspect @swappable_config.app_name %>, :config_adapter, <%= inspect @swappable_config.default_adapter_alias %>)
+       Application.get_env(<%= inspect @swappable_config.app_name %>, :config_adapter, <%= @swappable_config.default_adapter_alias %>)
       end
     end
     """)
