@@ -1,6 +1,8 @@
 defmodule Mix.Sims.SwappableConfig do
   @moduledoc false
 
+  alias Mix.Sims.CodeGeneration
+
   defstruct namespace: nil,
             behaviour: nil,
             test_adapter: nil,
@@ -30,21 +32,21 @@ defmodule Mix.Sims.SwappableConfig do
 
     default_adapter =
       if default_adapter_module_name = opts[:default_adapter] do
-        Igniter.Project.Module.parse(default_adapter_module_name)
+        CodeGeneration.parse_module_name(default_adapter_module_name)
       else
         Module.concat(project_module_prefix, DefaultAdapter)
       end
 
     behaviour =
       if behaviour_module_name = opts[:behaviour] do
-        Igniter.Project.Module.parse(behaviour_module_name)
+        CodeGeneration.parse_module_name(behaviour_module_name)
       else
         Module.concat(project_module_prefix, Adapter)
       end
 
     test_adapter =
       if test_adapter_name = opts[:test_config_adapter] do
-        Igniter.Project.Module.parse(test_adapter_name)
+        CodeGeneration.parse_module_name(test_adapter_name)
       else
         Module.concat(project_module_prefix, MockAdapter)
       end

@@ -1,6 +1,14 @@
 defmodule Mix.Sims.CodeGeneration do
   @moduledoc false
 
+  def parse_module_name(module_name) when is_binary(module_name) do
+    Igniter.Project.Module.parse(module_name)
+  end
+
+  def parse_module_name(module_name) when is_atom(module_name) do
+    module_name
+  end
+
   def find_template_path(namespace, template_path) do
     Enum.find_value(template_paths(), fn
       root ->

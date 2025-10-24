@@ -68,7 +68,31 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
   * `--update-test-helper` - Whether to automatically update `test/test_helper.exs`
     to add the Mox mock definition. Defaults to `true`. Set to `false` with
     `--no-update-test-helper` to skip this step.
+
+  ## Setting Default Values in config/config.exs
+
+  You can configure default values for the options in your `config/config.exs` file
+  to avoid having to pass them on the command line every time. These defaults will
+  be used when running any `sims.gen.*` tasks.
+
+  Add a configuration block for your application under the `:sims` key:
+
+  ```elixir
+  # config/config.exs
+  import Config
+
+  config :your_app, :sims,
+    config_namespace: "YourApp.Config",
+    config_behaviour: "YourApp.Config.Adapter",
+    config_default_adapter: "YourApp.Config.DefaultAdapter",
+    config_test_adapter: "YourApp.Config.MockAdapter",
+    update_test_helper: true
+  ```
+
+  Command-line options will override these configured defaults if provided.
   """
+
+  @default_options [update_test_helper: true]
 
   @template_namespace "sims.gen.config_module"
 
@@ -99,8 +123,8 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
         config_default_adapter: :string,
         update_test_helper: :boolean
       ],
-      # Default values for the options in the `schema`
-      defaults: [update_test_helper: true],
+      # Don't set these defaults here so they can be overridden by project config. Use @default_options instead.
+      defaults: [],
       # CLI aliases
       aliases: [],
       # A list of options in the schema that are required
@@ -110,9 +134,20 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
 
   @impl Igniter.Mix.Task
   def igniter(igniter) do
+    default_options_from_project_config =
+      igniter
+      |> Igniter.Project.Application.app_name()
+      |> Application.get_env(:sims, [])
+
+    # Define default options here so they can be overridden by project config
+    options_with_project_defaults =
+      @default_options
+      |> Keyword.merge(default_options_from_project_config)
+      |> Keyword.merge(igniter.args.options)
+
     config_module =
-      if custom_config = igniter.args.options[:config_namespace] do
-        Igniter.Project.Module.parse(custom_config)
+      if custom_config = options_with_project_defaults[:config_namespace] do
+        CodeGeneration.parse_module_name(custom_config)
       else
         Igniter.Project.Module.module_name(igniter, "Config")
       end
@@ -121,9 +156,9 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
       SwappableConfig.new(
         Igniter.Project.Application.app_name(igniter),
         config_module,
-        test_config_adapter: igniter.args.options[:config_test_adapter],
-        behaviour: igniter.args.options[:config_behaviour],
-        default_adapter: igniter.args.options[:config_default_adapter]
+        test_config_adapter: options_with_project_defaults[:config_test_adapter],
+        behaviour: options_with_project_defaults[:config_behaviour],
+        default_adapter: options_with_project_defaults[:config_default_adapter]
       )
 
     igniter
@@ -133,9 +168,11 @@ defmodule Mix.Tasks.Sims.Gen.ConfigModule do
     |> copy_template("config/adapter.ex.eex", swappable_config.behaviour)
     |> copy_template("config/default_adapter.ex.eex", swappable_config.default_adapter)
     |> then(fn igniter ->
-      if igniter.args.options[:update_test_helper],
-        do: update_test_helper(igniter, swappable_config),
-        else: igniter
+      if options_with_project_defaults[:update_test_helper] do
+        update_test_helper(igniter, swappable_config)
+      else
+        igniter
+      end
     end)
   end
 
