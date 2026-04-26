@@ -1,11 +1,12 @@
 defmodule <%= inspect @module %> do
   @moduledoc false
 
-  use Plug.Router
+  use Plug.Router, copy_opts_to_assign: :init_opts
 
   alias <%= inspect @simulator.namespace %>.StateServer
   alias <%= inspect @simulator.namespace %>.WebServer.Responses
 
+  plug :unpack_opts
   plug :match
   plug :fetch_query_params
 
@@ -19,12 +20,10 @@ defmodule <%= inspect @module %> do
 
   plug :dispatch
 
-  def call(conn, opts) do
-    {state_server, opts} = Keyword.pop!(opts, :state_server)
-
-    conn
-    |> assign(:state_server, state_server)
-    |> super(opts)
+  defp unpack_opts(conn, _opts) do
+    conn.assigns.init_opts
+    |> Keyword.validate!([:state_server])
+    |> then(&merge_assigns(conn, &1))
   end
 
   get "/hello"<%= if @simulator.options.response_stubs? do %>, assigns: %{endpoint_id: :greeting}<% end %> do
