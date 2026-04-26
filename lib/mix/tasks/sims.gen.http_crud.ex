@@ -97,7 +97,9 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrud do
     |> copy_simulator_template("simulator/web_server/router.ex.eex", WebServer.Router)
     |> copy_simulator_template("simulator/web_server/responses.ex.eex", WebServer.Responses)
     |> Igniter.Project.Deps.add_dep({:bandit, "~> 1.0", only: :test}, append?: true)
-    |> Igniter.Project.Deps.add_dep({:plug, "~> 1.13", only: [:dev, :test]}, append?: true)
+    |> Igniter.Project.Deps.add_dep({:plug, ">= 1.13.3 and < 2.0.0", only: [:dev, :test]},
+      append?: true
+    )
     |> Igniter.Project.Formatter.import_dep(:plug)
     |> then(fn igniter ->
       if igniter.args.options[:include_app_config],

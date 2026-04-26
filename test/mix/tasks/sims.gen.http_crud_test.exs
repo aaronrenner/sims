@@ -80,6 +80,7 @@ defmodule Mix.Tasks.Sims.Gen.HttpCrudTest do
 
     assert diff =~ "MyApp.AddressBookSimulator"
     assert diff =~ "A Address Book simulator"
+    assert diff =~ ~s({:plug, ">= 1.13.3 and < 2.0.0", only: [:dev, :test]})
   end
 
   test "handles namespaced simulator names" do
