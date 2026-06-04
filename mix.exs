@@ -1,7 +1,7 @@
 defmodule Sims.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
 
   def project do
     [
@@ -28,7 +28,8 @@ defmodule Sims.MixProject do
 
   defp docs do
     [
-      source_ref: "v#{@version}"
+      source_ref: "v#{@version}",
+      extras: ["CHANGELOG.md"]
     ]
   end
 
