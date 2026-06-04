@@ -28,7 +28,8 @@ defmodule Sims.MixProject do
 
   defp docs do
     [
-      source_ref: "v#{@version}"
+      source_ref: "v#{@version}",
+      extras: ["CHANGELOG.md"]
     ]
   end
 
