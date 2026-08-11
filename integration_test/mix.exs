@@ -29,7 +29,7 @@ defmodule Sims.Integration.MixProject do
       {:sims, path: "../"},
       {:bandit, "~> 1.0"},
       {:plug, "~> 1.13"},
-      {:req, "~> 0.5.6"},
+      {:req, "~> 0.6.2"},
       {:mox, "~> 1.0"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
